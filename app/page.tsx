@@ -1,0 +1,303 @@
+"use client"
+
+import { useMemo } from "react"
+import { useAuction } from "@/lib/auction-context"
+import { useAuth } from "@/lib/auth-context"
+import { Navigation } from "@/components/navigation"
+import { FranchiseDashboard } from "@/components/franchise-dashboard"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { DollarSign, Users, TrendingUp, Percent, ArrowRight } from "lucide-react"
+import Link from "next/link"
+import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Legend, Cell } from "recharts"
+import { AuctionHistory } from "@/components/auction-history"
+import { TradingHistory } from "@/components/trading-history"
+
+export default function DashboardPage() {
+  const { teams, players, getTeamPlayers, settings } = useAuction()
+  const { user } = useAuth()
+
+  const stats = useMemo(() => {
+    const soldPlayers = players.filter((p) => p.status === "Sold")
+    // Calculate total spent including franchise bids, player purchases, and RTM/RTS cards
+    const totalSpent = teams.reduce((sum, t) => {
+      const spent = settings.initialBudget - t.remainingBudget
+      return sum + spent
+    }, 0)
+    const avgPrice = soldPlayers.length > 0 ? soldPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0) / soldPlayers.length : 0
+
+    return {
+      totalSpent,
+      playersSold: soldPlayers.length,
+      remainingPlayers: players.length - soldPlayers.length,
+      avgPrice,
+    }
+  }, [teams, players, settings.initialBudget])
+
+  const teamSpendingData = useMemo(() => {
+    return teams.map((team) => {
+      // Calculate actual spent including franchise bid, players, and RTM/RTS cards
+      const spent = settings.initialBudget - team.remainingBudget
+      return {
+        name: team.franchiseName ? team.franchiseName.split(" ")[0] : team.groupName.split(" ")[0], // Shortened name for chart
+        spent: Number(spent.toFixed(1)),
+        remaining: Number(team.remainingBudget.toFixed(1)),
+        total: Number(settings.initialBudget.toFixed(1)),
+      }
+    })
+  }, [teams, settings.initialBudget])
+
+  const roleDistributionData = useMemo(() => {
+    const soldPlayers = players.filter((p) => p.status === "Sold")
+    const roles = ["Batsman", "Bowler", "All-rounder"] as const
+    return roles.map((role) => ({
+      name: role,
+      value: soldPlayers.filter((p) => p.role === role).length,
+    }))
+  }, [players])
+
+  const countryDistributionData = useMemo(() => {
+    const soldPlayers = players.filter((p) => p.status === "Sold")
+    return [
+      { name: "India", value: soldPlayers.filter((p) => p.country === "India").length },
+      { name: "Overseas", value: soldPlayers.filter((p) => p.country !== "India").length },
+    ]
+  }, [players])
+
+  const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))"]
+  const PIE_COLORS = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#ec4899"]
+
+  // Show franchise dashboard if logged in as franchise
+  if (user && user.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-foreground">My Team Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Monitor your team's progress and squad details</p>
+          </div>
+          <FranchiseDashboard />
+        </main>
+      </div>
+    )
+  }
+
+  // Admin dashboard view
+  return (
+    <div className="min-h-screen bg-background">
+      <Navigation />
+      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Overview of auction statistics and analytics</p>
+          </div>
+          <Link href="/auction">
+            <Button className="gap-2">
+              Start Auction
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                Total Auction Spend
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-primary">₹{stats.totalSpent.toFixed(1)} Cr</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Across all {teams.length} teams
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Players Sold
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-secondary">{stats.playersSold}</div>
+              <p className="text-xs text-muted-foreground mt-1">{stats.remainingPlayers} players remaining</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Average Player Price
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-accent">₹{stats.avgPrice.toFixed(2)} Cr</div>
+              <p className="text-xs text-muted-foreground mt-1">Per player sold</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Percent className="h-4 w-4" />
+                Auction Progress
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold">{((stats.playersSold / players.length) * 100).toFixed(1)}%</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stats.playersSold} of {players.length} players
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* Team Spending Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Team-wise Spending</CardTitle>
+              <CardDescription>Budget used vs remaining for each team</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-75">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={teamSpendingData}>
+                    <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))" 
+                      fontSize={12}
+                      domain={[0, 'auto']}
+                      label={{ value: 'Budget (₹ Cr)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Legend />
+                    <Bar dataKey="spent" fill="#ef4444" name="Spent" radius={[4, 4, 0, 0]} stackId="a" />
+                    <Bar dataKey="remaining" fill="#10b981" name="Remaining" radius={[4, 4, 0, 0]} stackId="a" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Role Distribution Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Role Distribution</CardTitle>
+              <CardDescription>Players sold by role</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-75">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={roleDistributionData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {roleDistributionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Country Distribution */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Country Distribution</CardTitle>
+              <CardDescription>Indian vs Overseas players sold</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-75">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={countryDistributionData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {countryDistributionData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index + 3 % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Top Purchases */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Most Expensive Purchases</CardTitle>
+              <CardDescription>Top 5 highest-paid players</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {players
+                  .filter((p) => p.status === "Sold")
+                  .sort((a, b) => (b.purchasePrice || 0) - (a.purchasePrice || 0))
+                  .slice(0, 5)
+                  .map((player, index) => {
+                    const team = teams.find((t) => t.id === player.currentTeam)
+                    return (
+                      <div key={player.id} className="flex items-center justify-between pb-4 border-b last:border-0">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <div className="font-medium">{player.name}</div>
+                            <div className="text-sm text-muted-foreground">{team?.franchiseName || team?.groupName || "Unknown"}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-primary">₹{player.purchasePrice} Cr</div>
+                          <div className="text-xs text-muted-foreground">{player.role}</div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                {stats.playersSold === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">No players sold yet</div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Auction History Panel */}
+        <AuctionHistory />
+
+        {/* Trading History Panel */}
+        <div className="mt-6">
+          <TradingHistory />
+        </div>
+      </main>
+    </div>
+  )
+}
