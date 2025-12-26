@@ -135,9 +135,16 @@ app.prepare().then(() => {
 
   // Handle WebSocket upgrade requests
   server.on('upgrade', (request, socket, head) => {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit('connection', ws, request)
-    })
+    const { pathname } = parse(request.url || '', true)
+    
+    // Only handle root WebSocket connections for auction
+    // Let Next.js handle HMR WebSocket (_next/webpack-hmr)
+    if (pathname === '/') {
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request)
+      })
+    }
+    // For other paths (like HMR), don't interfere - Next.js will handle them
   })
 
   wss.on('connection', (ws) => {
