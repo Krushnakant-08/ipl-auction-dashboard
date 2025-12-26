@@ -68,7 +68,7 @@ Franchise users see **masked information** for other teams:
 
 ## File Structure
 
-```
+\`\`\`
 lib/
 ├── auth-context.tsx          # Authentication context and logic
 ├── types.ts                  # Added User and UserRole types
@@ -86,15 +86,15 @@ app/
 components/
 ├── franchise-dashboard.tsx   # New franchise-specific dashboard
 └── navigation.tsx           # Updated with role-based menu
-```
+\`\`\`
 
 ## How to Use
 
 ### 1. **Starting the Application**
-```bash
+\`\`\`bash
 npm install
 npm run dev
-```
+\`\`\`
 
 ### 2. **First Time Access**
 - Navigate to `http://localhost:3000`
@@ -119,11 +119,11 @@ npm run dev
 ## Key Implementation Details
 
 ### Authentication Flow
-```typescript
+\`\`\`typescript
 User logs in → Role assigned (admin/franchise) → 
 Stored in localStorage → Routes protected → 
 Components render based on role
-```
+\`\`\`
 
 ### Route Protection
 - Public routes: `/login`
