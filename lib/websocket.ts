@@ -8,52 +8,63 @@ export class AuctionWebSocket {
   private shouldReconnect = true
 
   connect(onUpdate: (data: any) => void) {
+    // Prevent multiple connections
+    if (this.ws && (this.ws.readyState === WebSocket.CONNECTING || this.ws.readyState === WebSocket.OPEN)) {
+    //   console.log('⚠️ WebSocket already connected or connecting')
+      return
+    }
+
     this.shouldReconnect = true
     this.onUpdateCallback = onUpdate
 
     try {
       // Use ws:// for local development, wss:// for production
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const wsUrl = `${protocol}//${window.location.host}/api/ws`
+      const wsUrl = `${protocol}//${window.location.host}`
       
+    //   console.log('🔌 Connecting to WebSocket:', wsUrl)
       this.ws = new WebSocket(wsUrl)
 
       this.ws.onopen = () => {
-        console.log('WebSocket connected')
+        // console.log('✅ WebSocket connected')
         this.reconnectAttempts = 0
       }
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
+        //   console.log('📨 Received update from server')
           if (this.onUpdateCallback) {
             this.onUpdateCallback(data)
           }
         } catch (error) {
-          console.error('Failed to parse WebSocket message:', error)
+        //   console.error('Failed to parse WebSocket message:', error)
         }
       }
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error)
+        // console.error('❌ WebSocket error:', error)
       }
 
-      this.ws.onclose = () => {
-        console.log('WebSocket disconnected')
-        if (this.shouldReconnect) {
+      this.ws.onclose = (event) => {
+        // console.log('🔌 WebSocket disconnected, code:', event.code)
+        this.ws = null
+        if (this.shouldReconnect && event.code !== 1000) {
           this.reconnect()
         }
       }
     } catch (error) {
-      console.error('Failed to connect WebSocket:', error)
-      this.reconnect()
+      // console.error('Failed to connect WebSocket:', error)
+      if (this.shouldReconnect) {
+        this.reconnect()
+      }
     }
   }
 
   private reconnect() {
     if (this.shouldReconnect && this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++
-      console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`)
+      // console.log(`Reconnecting... Attempt ${this.reconnectAttempts}`)
       setTimeout(() => {
         if (this.onUpdateCallback) {
           this.connect(this.onUpdateCallback)

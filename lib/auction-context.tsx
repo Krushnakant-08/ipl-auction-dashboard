@@ -49,6 +49,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false)
   const wsRef = useRef<AuctionWebSocket | null>(null)
   const isSavingRef = useRef(false)
+  const isCleaningUpRef = useRef(false)
 
   // Load initial state from server on mount
   useEffect(() => {
@@ -76,21 +77,29 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isInitialized) return
 
-    wsRef.current = new AuctionWebSocket()
-    
-    wsRef.current.connect((data) => {
-      // Update state when receiving updates from server
-      if (!isSavingRef.current) {
-        if (data.settings) setSettings(data.settings)
-        if (data.teams) setTeams(data.teams)
-        if (data.players) setPlayers(data.players)
-        if (data.transactions) setTransactions(data.transactions)
-      }
-    })
+    // Don't create new WebSocket if one already exists
+    if (!wsRef.current) {
+      wsRef.current = new AuctionWebSocket()
+      
+      wsRef.current.connect((data) => {
+        // Update state when receiving updates from server
+        if (!isSavingRef.current && !isCleaningUpRef.current) {
+          if (data.settings) setSettings(data.settings)
+          if (data.teams) setTeams(data.teams)
+          if (data.players) setPlayers(data.players)
+          if (data.transactions) setTransactions(data.transactions)
+        }
+      })
+    }
 
     return () => {
+      // Mark as cleaning up to prevent state updates during unmount
+      isCleaningUpRef.current = true
+      
+      // Only disconnect when component actually unmounts
       if (wsRef.current) {
         wsRef.current.disconnect()
+        wsRef.current = null
       }
     }
   }, [isInitialized])
@@ -131,8 +140,13 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   // Team Auction: Assign franchise to team
   const assignFranchise = useCallback(
     (teamId: string, franchiseId: string, bidAmount: number) => {
+      console.log('🎯 assignFranchise called:', { teamId, franchiseId, bidAmount })
+      
       const team = getTeamById(teamId)
       const franchise = availableFranchises.find((f) => f.id === franchiseId)
+
+      console.log('Found team:', team)
+      console.log('Found franchise:', franchise)
 
       if (!team || !franchise) {
         toast({ title: "Error", description: "Team or franchise not found", variant: "destructive" })
@@ -150,11 +164,14 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
 
       // Check if franchise already taken
       const franchiseTaken = teams.some((t) => t.franchiseName === franchise.name && t.id !== teamId)
+      console.log('Franchise taken?', franchiseTaken)
+      
       if (franchiseTaken) {
         toast({ title: "Franchise Taken", description: "This franchise is already assigned", variant: "destructive" })
         return false
       }
 
+      console.log('✅ Updating team with franchise')
       setTeams((prev) =>
         prev.map((t) =>
           t.id === teamId
@@ -185,23 +202,26 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   }, [teams])
 
   const startPlayerAuction = useCallback(() => {
-    if (!canStartPlayerAuction()) {
-      // Auto-complete teams that have franchises assigned but not marked complete
-      setTeams((prev) => 
-        prev.map((t) => 
-          t.franchiseName && !t.teamAuctionComplete 
-            ? { ...t, teamAuctionComplete: true } 
-            : t
-        )
+    // Auto-complete teams that have franchises assigned but not marked complete
+    setTeams((prev) => 
+      prev.map((t) => 
+        t.franchiseName && !t.teamAuctionComplete 
+          ? { ...t, teamAuctionComplete: true } 
+          : t
       )
-    }
+    )
 
-    setSettings((prev) => ({ ...prev, currentPhase: "Player Auction" }))
+    setSettings((prev) => {
+      const newSettings: AuctionSettings = { ...prev, currentPhase: "Player Auction" }
+      console.log('Starting player auction, new phase:', newSettings.currentPhase)
+      return newSettings
+    })
+    
     toast({
       title: "Player Auction Started!",
       description: "Teams can now bid for players",
     })
-  }, [canStartPlayerAuction, toast])
+  }, [toast])
 
   // Player Auction: Sell player to team
   const sellPlayer = useCallback(

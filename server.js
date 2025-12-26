@@ -130,17 +130,24 @@ app.prepare().then(() => {
     }
   })
 
-  // Create WebSocket server
-  const wss = new WebSocketServer({ server })
+  // Create WebSocket server with noServer option
+  const wss = new WebSocketServer({ noServer: true })
+
+  // Handle WebSocket upgrade requests
+  server.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit('connection', ws, request)
+    })
+  })
 
   wss.on('connection', (ws) => {
-    console.log('Client connected')
+    // console.log('Client connected')
 
     // Send current state to newly connected client
     ws.send(JSON.stringify(auctionState))
 
     ws.on('close', (code, reason) => {
-      console.log('Client disconnected')
+    //   console.log('Client disconnected')
     })
 
     ws.on('error', (error) => {
