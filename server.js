@@ -31,6 +31,7 @@ let auctionState = {
   teams: null,
   players: null,
   transactions: null,
+  trades: null,
   lastUpdate: Date.now(),
 }
 

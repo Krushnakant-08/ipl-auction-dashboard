@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
-import type { Team, Player, AuctionSettings, AuctionTransaction } from "./types"
+import type { Team, Player, AuctionSettings, AuctionTransaction, Trade } from "./types"
 import { mockTeams, mockPlayers, defaultSettings, availableFranchises } from "./mock-data"
 import { useToast } from "@/hooks/use-toast"
 import { AuctionWebSocket } from "./websocket"
@@ -12,6 +12,7 @@ interface AuctionContextType {
   teams: Team[]
   players: Player[]
   transactions: AuctionTransaction[]
+  trades: Trade[]
   availableFranchises: typeof availableFranchises
 
   // Team Auction
@@ -21,6 +22,12 @@ interface AuctionContextType {
 
   // Player Auction
   sellPlayer: (playerId: string, teamId: string, price: number) => boolean
+
+  // Trading Window
+  startTradingWindow: (durationMinutes: number) => void
+  proposeTrade: (proposedBy: string, proposedTo: string, offeredPlayers: string[], requestedPlayers: string[], message?: string) => boolean
+  respondToTrade: (tradeId: string, accept: boolean) => boolean
+  cancelTrade: (tradeId: string, teamId: string) => boolean
 
   // RTM
   useRTM: (playerId: string, originalTeamId: string) => boolean
@@ -46,6 +53,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   const [teams, setTeams] = useState<Team[]>(mockTeams)
   const [players, setPlayers] = useState<Player[]>(mockPlayers)
   const [transactions, setTransactions] = useState<AuctionTransaction[]>([])
+  const [trades, setTrades] = useState<Trade[]>([])
   const [isInitialized, setIsInitialized] = useState(false)
   const wsRef = useRef<AuctionWebSocket | null>(null)
   const isSavingRef = useRef(false)
@@ -62,6 +70,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         if (data.teams) setTeams(data.teams)
         if (data.players) setPlayers(data.players)
         if (data.transactions) setTransactions(data.transactions)
+        if (data.trades) setTrades(data.trades)
         
         setIsInitialized(true)
       } catch (error) {
@@ -88,6 +97,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           if (data.teams) setTeams(data.teams)
           if (data.players) setPlayers(data.players)
           if (data.transactions) setTransactions(data.transactions)
+          if (data.trades) setTrades(data.trades)
         }
       })
     }
@@ -119,6 +129,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
             teams,
             players,
             transactions,
+            trades,
           }),
         })
         isSavingRef.current = false
@@ -131,7 +142,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     // Debounce: only save after 500ms of no changes
     const timeoutId = setTimeout(saveToServer, 500)
     return () => clearTimeout(timeoutId)
-  }, [settings, teams, players, transactions, isInitialized])
+  }, [settings, teams, players, transactions, trades, isInitialized])
 
   const getTeamById = useCallback((teamId: string) => teams.find((t) => t.id === teamId), [teams])
   const getPlayerById = useCallback((playerId: string) => players.find((p) => p.id === playerId), [players])
@@ -583,6 +594,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     setTeams(mockTeams)
     setPlayers(mockPlayers)
     setTransactions([])
+    setTrades([])
     
     // Clear server state
     try {
@@ -594,6 +606,193 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     toast({ title: "Auction Reset", description: "All data reset to initial state" })
   }, [toast])
 
+  // Trading Window: Start trading phase
+  const startTradingWindow = useCallback((durationMinutes: number) => {
+    const endTime = new Date(Date.now() + durationMinutes * 60 * 1000)
+    setSettings(prev => ({
+      ...prev,
+      currentPhase: "Trading Window",
+      tradingWindowEnd: endTime
+    }))
+    toast({
+      title: "Trading Window Opened",
+      description: `Trading will close in ${durationMinutes} minutes`
+    })
+  }, [toast])
+
+  // Trading Window: Propose a trade
+  const proposeTrade = useCallback((
+    proposedBy: string,
+    proposedTo: string,
+    offeredPlayers: string[],
+    requestedPlayers: string[],
+    message?: string
+  ) => {
+    const proposingTeam = getTeamById(proposedBy)
+    const targetTeam = getTeamById(proposedTo)
+
+    if (!proposingTeam || !targetTeam) {
+      toast({ title: "Error", description: "Teams not found", variant: "destructive" })
+      return false
+    }
+
+    if (settings.currentPhase !== "Trading Window") {
+      toast({ title: "Error", description: "Trading window is not open", variant: "destructive" })
+      return false
+    }
+
+    if (offeredPlayers.length === 0 || requestedPlayers.length === 0) {
+      toast({ title: "Error", description: "Both teams must offer at least one player", variant: "destructive" })
+      return false
+    }
+
+    // Verify all offered players belong to proposing team
+    const invalidOffered = offeredPlayers.some(pid => {
+      const player = getPlayerById(pid)
+      return !player || player.currentTeam !== proposedBy
+    })
+
+    if (invalidOffered) {
+      toast({ title: "Error", description: "You can only trade your own players", variant: "destructive" })
+      return false
+    }
+
+    // Verify all requested players belong to target team
+    const invalidRequested = requestedPlayers.some(pid => {
+      const player = getPlayerById(pid)
+      return !player || player.currentTeam !== proposedTo
+    })
+
+    if (invalidRequested) {
+      toast({ title: "Error", description: "Invalid player selection from target team", variant: "destructive" })
+      return false
+    }
+
+    const trade: Trade = {
+      id: `trade-${Date.now()}`,
+      proposedBy,
+      proposedByName: proposingTeam.franchiseName || proposingTeam.groupName,
+      proposedTo,
+      proposedToName: targetTeam.franchiseName || targetTeam.groupName,
+      offeredPlayers,
+      requestedPlayers,
+      status: "Pending",
+      proposedAt: new Date(),
+      message
+    }
+
+    setTrades(prev => [...prev, trade])
+    toast({
+      title: "Trade Proposed",
+      description: `Trade offer sent to ${trade.proposedToName}`
+    })
+
+    return true
+  }, [settings, getTeamById, getPlayerById, toast])
+
+  // Trading Window: Respond to trade (accept/reject)
+  const respondToTrade = useCallback((tradeId: string, accept: boolean) => {
+    const trade = trades.find(t => t.id === tradeId)
+
+    if (!trade) {
+      toast({ title: "Error", description: "Trade not found", variant: "destructive" })
+      return false
+    }
+
+    if (trade.status !== "Pending") {
+      toast({ title: "Error", description: "Trade already processed", variant: "destructive" })
+      return false
+    }
+
+    if (settings.currentPhase !== "Trading Window") {
+      toast({ title: "Error", description: "Trading window is closed", variant: "destructive" })
+      return false
+    }
+
+    if (accept) {
+      // Execute the trade - swap players between teams
+      setPlayers(prev => prev.map(p => {
+        if (trade.offeredPlayers.includes(p.id)) {
+          return { ...p, currentTeam: trade.proposedTo }
+        }
+        if (trade.requestedPlayers.includes(p.id)) {
+          return { ...p, currentTeam: trade.proposedBy }
+        }
+        return p
+      }))
+
+      // Update team squads
+      setTeams(prev => prev.map(t => {
+        if (t.id === trade.proposedBy) {
+          return {
+            ...t,
+            squadPlayerIds: [
+              ...t.squadPlayerIds.filter(pid => !trade.offeredPlayers.includes(pid)),
+              ...trade.requestedPlayers
+            ]
+          }
+        }
+        if (t.id === trade.proposedTo) {
+          return {
+            ...t,
+            squadPlayerIds: [
+              ...t.squadPlayerIds.filter(pid => !trade.requestedPlayers.includes(pid)),
+              ...trade.offeredPlayers
+            ]
+          }
+        }
+        return t
+      }))
+
+      toast({
+        title: "Trade Accepted!",
+        description: `Players exchanged between ${trade.proposedByName} and ${trade.proposedToName}`
+      })
+    } else {
+      toast({
+        title: "Trade Rejected",
+        description: "Trade offer declined"
+      })
+    }
+
+    setTrades(prev => prev.map(t =>
+      t.id === tradeId
+        ? { ...t, status: accept ? "Accepted" : "Rejected", respondedAt: new Date() }
+        : t
+    ))
+
+    return true
+  }, [trades, settings, toast])
+
+  // Trading Window: Cancel trade
+  const cancelTrade = useCallback((tradeId: string, teamId: string) => {
+    const trade = trades.find(t => t.id === tradeId)
+
+    if (!trade) {
+      toast({ title: "Error", description: "Trade not found", variant: "destructive" })
+      return false
+    }
+
+    if (trade.proposedBy !== teamId) {
+      toast({ title: "Error", description: "Only the proposing team can cancel", variant: "destructive" })
+      return false
+    }
+
+    if (trade.status !== "Pending") {
+      toast({ title: "Error", description: "Trade already processed", variant: "destructive" })
+      return false
+    }
+
+    setTrades(prev => prev.map(t =>
+      t.id === tradeId
+        ? { ...t, status: "Cancelled", respondedAt: new Date() }
+        : t
+    ))
+
+    toast({ title: "Trade Cancelled", description: "Trade offer withdrawn" })
+    return true
+  }, [trades, toast])
+
   return (
     <AuctionContext.Provider
       value={{
@@ -601,10 +800,15 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         teams,
         players,
         transactions,
+        trades,
         availableFranchises,
         assignFranchise,
         canStartPlayerAuction,
         startPlayerAuction,
+        startTradingWindow,
+        proposeTrade,
+        respondToTrade,
+        cancelTrade,
         sellPlayer,
         useRTM,
         canUseRTM,

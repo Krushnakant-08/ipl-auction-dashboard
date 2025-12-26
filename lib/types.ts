@@ -1,7 +1,8 @@
 export type PlayerRole = "Batsman" | "Bowler" | "All-rounder"
 export type PlayerStatus = "Unsold" | "Sold"
-export type AuctionPhase = "Team Auction" | "Player Auction" | "Finalization"
+export type AuctionPhase = "Team Auction" | "Player Auction" | "Trading Window" | "Finalization"
 export type UserRole = "admin" | "franchise"
+export type TradeStatus = "Pending" | "Accepted" | "Rejected" | "Cancelled"
 
 export interface User {
   id: string
@@ -65,6 +66,21 @@ export interface AuctionSettings {
   minSquadSize: number
   maxSquadSize: number
   currentPhase: AuctionPhase
+  tradingWindowEnd?: Date | null
+}
+
+export interface Trade {
+  id: string
+  proposedBy: string // team ID
+  proposedByName: string
+  proposedTo: string // team ID
+  proposedToName: string
+  offeredPlayers: string[] // player IDs from proposing team
+  requestedPlayers: string[] // player IDs from target team
+  status: TradeStatus
+  proposedAt: Date
+  respondedAt?: Date | null
+  message?: string
 }
 
 export interface FinalEleven {
