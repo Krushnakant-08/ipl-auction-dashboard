@@ -24,18 +24,18 @@ Complete guide for running the IPL Auction Dashboard on your local network for m
 
 ### Installation
 
-```bash
+\`\`\`bash
 # Install dependencies
 npm install
 # or
 pnpm install
-```
+\`\`\`
 
 ### Run the Server
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 The server will start on:
 - **Your Computer:** http://localhost:3000
@@ -48,26 +48,26 @@ The server will start on:
 ### Step 1: Find Your IP Address
 
 **Windows:**
-```bash
+\`\`\`bash
 ipconfig
-```
+\`\`\`
 Look for "IPv4 Address" under your active WiFi/Ethernet adapter (e.g., `192.168.1.4`)
 
 **Mac/Linux:**
-```bash
+\`\`\`bash
 ifconfig
 # or
 ip addr show
-```
+\`\`\`
 
 ### Step 2: Share the URL
 
 Your network URL format: `http://YOUR_IP:3000`
 
 **Example:** If your IP is `192.168.1.4`, share:
-```
+\`\`\`
 http://192.168.1.4:3000
-```
+\`\`\`
 
 ### Step 3: Connect Other Devices
 
@@ -189,20 +189,20 @@ The application uses **server-side state management** with **1-second polling**:
 **Solutions:**
 
 1. **Check Firewall**
-   ```
+   \`\`\`
    Windows: Settings → Privacy & Security → Windows Firewall
    Allow port 3000 through firewall
-   ```
+   \`\`\`
 
 2. **Verify Same Network**
    - Both devices must be on same WiFi
    - Not guest network or different SSIDs
 
 3. **Test Connection**
-   ```bash
+   \`\`\`bash
    # From mobile, use browser to visit:
    http://YOUR_LAPTOP_IP:3000
-   ```
+   \`\`\`
 
 4. **Disable VPN**
    - Turn off VPN on laptop
@@ -221,11 +221,11 @@ The application uses **server-side state management** with **1-second polling**:
    - Look for API errors
 
 3. **Restart Server**
-   ```bash
+   \`\`\`bash
    # Stop server (Ctrl+C)
    # Restart
    npm run dev
-   ```
+   \`\`\`
 
 ### Problem: "Do auction first" message on mobile
 
@@ -300,7 +300,7 @@ A: Yes, edit `lib/auth-context.tsx` (lines 19-20).
 
 ## 🎯 Example Session
 
-```
+\`\`\`
 1. Admin (Laptop): Login → Franchise Auction → Assign 8 teams
 2. Admin (Laptop): Click "Start Player Auction"
 3. Franchise 1 (Mobile): Login → See team dashboard
@@ -310,7 +310,7 @@ A: Yes, edit `lib/auth-context.tsx` (lines 19-20).
 7. Admin (Laptop): Sell Player 2 to Franchise 2 for 3 Cr
 8. Franchise 2 (Tablet): Sees update - budget decreases, player added
 9. All devices stay in sync throughout auction!
-```
+\`\`\`
 
 ---
 

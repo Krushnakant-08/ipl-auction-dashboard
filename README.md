@@ -19,9 +19,9 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 ### Running the Development Server
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 The server will start on:
 - **Local:** http://localhost:3000
@@ -32,7 +32,7 @@ The server will start on:
 To allow franchise users to login from other devices on the same network:
 
 1. **Find your machine's IP address:**
-   ```bash
+   \`\`\`bash
    # Windows
    ipconfig
    # Look for "IPv4 Address" under your active network adapter
@@ -40,7 +40,7 @@ To allow franchise users to login from other devices on the same network:
    # Mac/Linux
    ifconfig
    # Look for "inet" address
-   ```
+   \`\`\`
 
 2. **Share the network URL:**
    - Format: `http://YOUR_IP_ADDRESS:3000`
