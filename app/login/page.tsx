@@ -16,6 +16,7 @@ export default function LoginPage() {
   const { teams } = useAuction()
   const [selectedTeamId, setSelectedTeamId] = useState<string>("")
   const [adminPassword, setAdminPassword] = useState<string>("")
+  const [franchisePassword, setFranchisePassword] = useState<string>("")
   const [error, setError] = useState<string>("")
 
   const completedTeams = teams.filter((t) => t.teamAuctionComplete && t.franchiseName)
@@ -31,7 +32,10 @@ export default function LoginPage() {
   const handleFranchiseLogin = () => {
     if (selectedTeamId) {
       setError("")
-      login("franchise", selectedTeamId)
+      const result = login("franchise", selectedTeamId, franchisePassword)
+      if (!result.success && result.error) {
+        setError(result.error)
+      }
     }
   }
 
@@ -140,7 +144,36 @@ export default function LoginPage() {
                   <span>Secure team-specific view</span>
                 </div>
               </div>
+
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="franchise-password" className="flex items-center gap-2">
+                    <Lock className="h-4 w-4" />
+                    Franchise Password
+                  </Label>
+                  <Input
+                    id="franchise-password"
+                    type="password"
+                    placeholder="Enter franchise password"
+                    value={franchisePassword}
+                    onChange={(e) => setFranchisePassword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && franchisePassword && selectedTeamId) {
+                        handleFranchiseLogin()
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Password depends on your franchise. Contact admin for your password.
+                  </p>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="franchise-select">Select Your Franchise</Label>
                   <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
@@ -173,7 +206,7 @@ export default function LoginPage() {
                   className="w-full"
                   size="lg"
                   variant="secondary"
-                  disabled={!selectedTeamId}
+                  disabled={!selectedTeamId || !franchisePassword}
                 >
                   <Building2 className="mr-2 h-4 w-4" />
                   Login as Franchise
@@ -184,7 +217,7 @@ export default function LoginPage() {
         </div>
 
         <div className="mt-8 text-center text-sm text-muted-foreground">
-          <p>This is a demo authentication system. No passwords required.</p>
+          <p>This is a demo authentication system. Use the passwords shown above to login.</p>
         </div>
       </div>
     </div>

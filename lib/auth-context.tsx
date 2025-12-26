@@ -17,7 +17,18 @@ interface AuthContextType {
 
 // Passwords - In production, use environment variables and proper authentication
 const ADMIN_PASSWORD = "admin123"
-const FRANCHISE_PASSWORD = "franchise123"
+
+// Individual franchise passwords (teamId: password)
+const FRANCHISE_PASSWORDS: Record<string, string> = {
+  t1: "alpha123",      // Group Alpha
+  t2: "beta123",       // Group Beta
+  t3: "gamma123",      // Group Gamma
+  t4: "delta123",      // Group Delta
+  t5: "epsilon123",    // Group Epsilon
+  t6: "zeta123",       // Group Zeta
+  t7: "eta123",        // Group Eta
+  t8: "theta123",      // Group Theta
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -71,8 +82,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!password) {
           return { success: false, error: "Password is required" }
         }
-        if (password !== FRANCHISE_PASSWORD) {
-          return { success: false, error: "Incorrect password" }
+        if (!teamId) {
+          return { success: false, error: "Team selection is required" }
+        }
+        
+        // Check if password matches the team's specific password
+        const correctPassword = FRANCHISE_PASSWORDS[teamId]
+        if (!correctPassword) {
+          return { success: false, error: "Invalid team selected" }
+        }
+        if (password !== correctPassword) {
+          return { success: false, error: "Incorrect password for this franchise" }
         }
       }
 

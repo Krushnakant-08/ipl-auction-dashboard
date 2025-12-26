@@ -309,11 +309,19 @@ export default function AuctionPage() {
                     </div>
                   </div>
 
-                  {canStartPlayerAuction() && (
-                    <Button onClick={handleStartPlayerAuction} className="w-full" size="lg">
-                      <Play className="h-4 w-4 mr-2" />
-                      Start Player Auction
-                    </Button>
+                  <Button 
+                    onClick={handleStartPlayerAuction} 
+                    className="w-full" 
+                    size="lg"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    {canStartPlayerAuction() ? "Start Player Auction" : "Start Player Auction Anyway"}
+                  </Button>
+                  
+                  {!canStartPlayerAuction() && (
+                    <p className="text-xs text-muted-foreground text-center mt-2">
+                      Teams with franchises will participate, others will be skipped
+                    </p>
                   )}
                 </CardContent>
               </Card>

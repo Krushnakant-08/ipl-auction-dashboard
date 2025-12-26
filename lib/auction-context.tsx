@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
 import type { Team, Player, AuctionSettings, AuctionTransaction } from "./types"
 import { mockTeams, mockPlayers, defaultSettings, availableFranchises } from "./mock-data"
 import { useToast } from "@/hooks/use-toast"
+import { AuctionWebSocket } from "./websocket"
 
 interface AuctionContextType {
   settings: AuctionSettings
@@ -45,6 +46,83 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   const [teams, setTeams] = useState<Team[]>(mockTeams)
   const [players, setPlayers] = useState<Player[]>(mockPlayers)
   const [transactions, setTransactions] = useState<AuctionTransaction[]>([])
+  const [isInitialized, setIsInitialized] = useState(false)
+  const wsRef = useRef<AuctionWebSocket | null>(null)
+  const isSavingRef = useRef(false)
+
+  // Load initial state from server on mount
+  useEffect(() => {
+    const loadFromServer = async () => {
+      try {
+        const response = await fetch('/api/auction')
+        const data = await response.json()
+        
+        if (data.settings) setSettings(data.settings)
+        if (data.teams) setTeams(data.teams)
+        if (data.players) setPlayers(data.players)
+        if (data.transactions) setTransactions(data.transactions)
+        
+        setIsInitialized(true)
+      } catch (error) {
+        console.error('Failed to load auction state:', error)
+        setIsInitialized(true)
+      }
+    }
+
+    loadFromServer()
+  }, [])
+
+  // Setup WebSocket connection for real-time updates
+  useEffect(() => {
+    if (!isInitialized) return
+
+    wsRef.current = new AuctionWebSocket()
+    
+    wsRef.current.connect((data) => {
+      // Update state when receiving updates from server
+      if (!isSavingRef.current) {
+        if (data.settings) setSettings(data.settings)
+        if (data.teams) setTeams(data.teams)
+        if (data.players) setPlayers(data.players)
+        if (data.transactions) setTransactions(data.transactions)
+      }
+    })
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.disconnect()
+      }
+    }
+  }, [isInitialized])
+
+  // Save to server whenever state changes (debounced)
+  useEffect(() => {
+    if (!isInitialized) return
+
+    const saveToServer = async () => {
+      try {
+        isSavingRef.current = true
+        await fetch('/api/auction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            settings,
+            teams,
+            players,
+            transactions,
+          }),
+        })
+        isSavingRef.current = false
+      } catch (error) {
+        console.error('Failed to save auction state:', error)
+        isSavingRef.current = false
+      }
+    }
+
+    // Debounce: only save after 500ms of no changes
+    const timeoutId = setTimeout(saveToServer, 500)
+    return () => clearTimeout(timeoutId)
+  }, [settings, teams, players, transactions, isInitialized])
 
   const getTeamById = useCallback((teamId: string) => teams.find((t) => t.id === teamId), [teams])
   const getPlayerById = useCallback((playerId: string) => players.find((p) => p.id === playerId), [players])
@@ -108,12 +186,14 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
 
   const startPlayerAuction = useCallback(() => {
     if (!canStartPlayerAuction()) {
-      toast({
-        title: "Cannot Start Player Auction",
-        description: "All teams must complete franchise auction first",
-        variant: "destructive",
-      })
-      return
+      // Auto-complete teams that have franchises assigned but not marked complete
+      setTeams((prev) => 
+        prev.map((t) => 
+          t.franchiseName && !t.teamAuctionComplete 
+            ? { ...t, teamAuctionComplete: true } 
+            : t
+        )
+      )
     }
 
     setSettings((prev) => ({ ...prev, currentPhase: "Player Auction" }))
@@ -478,11 +558,19 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     toast({ title: "Transaction Undone", description: "Last action reversed" })
   }, [transactions, getPlayerById, getTeamById, toast])
 
-  const resetAuction = useCallback(() => {
+  const resetAuction = useCallback(async () => {
     setSettings(defaultSettings)
     setTeams(mockTeams)
     setPlayers(mockPlayers)
     setTransactions([])
+    
+    // Clear server state
+    try {
+      await fetch('/api/auction', { method: 'DELETE' })
+    } catch (error) {
+      console.error('Failed to clear server state:', error)
+    }
+    
     toast({ title: "Auction Reset", description: "All data reset to initial state" })
   }, [toast])
 

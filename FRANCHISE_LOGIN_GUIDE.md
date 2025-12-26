@@ -7,10 +7,12 @@ The IPL Auction Dashboard now includes a comprehensive authentication system wit
 ## Features Implemented
 
 ### 1. **Authentication System**
-- Simple role-based login (no password required for demo purposes)
+- Role-based login with password authentication
 - Two user roles: **Admin** and **Franchise**
 - Persistent sessions using localStorage
 - Automatic route protection and redirection
+- **Admin Password:** `admin123`
+- **Franchise Password:** `franchise123`
 
 ### 2. **Admin Access (Full Control)**
 Admin users have complete access to all features:
@@ -29,7 +31,7 @@ Franchise users have restricted access focused on their own team:
 - ✅ **Cannot see other franchises' budgets or purses**
 - ✅ **Cannot see other teams' player purchase prices** (shown as ●●●●)
 - ✅ View auction progress
-- ✅ Access player pool (with restricted information)
+- ❌ Cannot access player pool
 - ❌ Cannot access auction management
 - ❌ Cannot access settings
 - ❌ Cannot view all teams page
@@ -38,9 +40,11 @@ Franchise users have restricted access focused on their own team:
 
 #### Login Page (`/login`)
 - Beautiful dual-card interface
-- Admin login option
+- Admin login option with password (`admin123`)
+- Franchise login with password (`franchise123`)
 - Franchise selection dropdown (only shows completed franchises)
 - Role-specific feature descriptions
+- Password validation and error handling
 
 #### Franchise Dashboard
 - Personalized team overview
