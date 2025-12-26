@@ -2,7 +2,7 @@ export type PlayerRole = "Batsman" | "Bowler" | "All-rounder"
 export type PlayerStatus = "Unsold" | "Sold"
 export type AuctionPhase = "Team Auction" | "Player Auction" | "Trading Window" | "Finalization"
 export type UserRole = "admin" | "franchise"
-export type TradeStatus = "Pending" | "Accepted" | "Rejected" | "Cancelled"
+export type TradeStatus = "Pending" | "Pending Admin Approval" | "Accepted" | "Rejected" | "Cancelled"
 
 export interface User {
   id: string

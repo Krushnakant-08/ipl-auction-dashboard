@@ -28,6 +28,7 @@ interface AuctionContextType {
   proposeTrade: (proposedBy: string, proposedTo: string, offeredPlayers: string[], requestedPlayers: string[], message?: string) => boolean
   respondToTrade: (tradeId: string, accept: boolean) => boolean
   cancelTrade: (tradeId: string, teamId: string) => boolean
+  approveTrade: (tradeId: string, approve: boolean) => boolean
 
   // RTM
   useRTM: (playerId: string, originalTeamId: string) => boolean
@@ -710,6 +711,77 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (accept) {
+      // Move to pending admin approval instead of completing trade immediately
+      setTrades(prev => prev.map(t =>
+        t.id === tradeId
+          ? { ...t, status: "Pending Admin Approval", respondedAt: new Date() }
+          : t
+      ))
+
+      toast({
+        title: "Trade Accepted!",
+        description: "Waiting for admin approval to complete the trade"
+      })
+    } else {
+      setTrades(prev => prev.map(t =>
+        t.id === tradeId
+          ? { ...t, status: "Rejected", respondedAt: new Date() }
+          : t
+      ))
+
+      toast({
+        title: "Trade Rejected",
+        description: "Trade offer declined"
+      })
+    }
+
+    return true
+  }, [trades, settings, toast])
+
+  // Trading Window: Cancel trade
+  const cancelTrade = useCallback((tradeId: string, teamId: string) => {
+    const trade = trades.find(t => t.id === tradeId)
+
+    if (!trade) {
+      toast({ title: "Error", description: "Trade not found", variant: "destructive" })
+      return false
+    }
+
+    if (trade.proposedBy !== teamId) {
+      toast({ title: "Error", description: "Only the proposing team can cancel", variant: "destructive" })
+      return false
+    }
+
+    if (trade.status !== "Pending") {
+      toast({ title: "Error", description: "Trade already processed", variant: "destructive" })
+      return false
+    }
+
+    setTrades(prev => prev.map(t =>
+      t.id === tradeId
+        ? { ...t, status: "Cancelled", respondedAt: new Date() }
+        : t
+    ))
+
+    toast({ title: "Trade Cancelled", description: "Trade offer withdrawn" })
+    return true
+  }, [trades, toast])
+
+  // Trading Window: Admin approve/reject trade
+  const approveTrade = useCallback((tradeId: string, approve: boolean) => {
+    const trade = trades.find(t => t.id === tradeId)
+
+    if (!trade) {
+      toast({ title: "Error", description: "Trade not found", variant: "destructive" })
+      return false
+    }
+
+    if (trade.status !== "Pending Admin Approval") {
+      toast({ title: "Error", description: "Trade not awaiting approval", variant: "destructive" })
+      return false
+    }
+
+    if (approve) {
       // Execute the trade - swap players between teams
       setPlayers(prev => prev.map(p => {
         if (trade.offeredPlayers.includes(p.id)) {
@@ -745,51 +817,22 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       }))
 
       toast({
-        title: "Trade Accepted!",
+        title: "Trade Approved!",
         description: `Players exchanged between ${trade.proposedByName} and ${trade.proposedToName}`
       })
     } else {
       toast({
         title: "Trade Rejected",
-        description: "Trade offer declined"
+        description: "Admin rejected the trade"
       })
     }
 
     setTrades(prev => prev.map(t =>
       t.id === tradeId
-        ? { ...t, status: accept ? "Accepted" : "Rejected", respondedAt: new Date() }
+        ? { ...t, status: approve ? "Accepted" : "Rejected", respondedAt: new Date() }
         : t
     ))
 
-    return true
-  }, [trades, settings, toast])
-
-  // Trading Window: Cancel trade
-  const cancelTrade = useCallback((tradeId: string, teamId: string) => {
-    const trade = trades.find(t => t.id === tradeId)
-
-    if (!trade) {
-      toast({ title: "Error", description: "Trade not found", variant: "destructive" })
-      return false
-    }
-
-    if (trade.proposedBy !== teamId) {
-      toast({ title: "Error", description: "Only the proposing team can cancel", variant: "destructive" })
-      return false
-    }
-
-    if (trade.status !== "Pending") {
-      toast({ title: "Error", description: "Trade already processed", variant: "destructive" })
-      return false
-    }
-
-    setTrades(prev => prev.map(t =>
-      t.id === tradeId
-        ? { ...t, status: "Cancelled", respondedAt: new Date() }
-        : t
-    ))
-
-    toast({ title: "Trade Cancelled", description: "Trade offer withdrawn" })
     return true
   }, [trades, toast])
 
@@ -809,6 +852,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         proposeTrade,
         respondToTrade,
         cancelTrade,
+        approveTrade,
         sellPlayer,
         useRTM,
         canUseRTM,
