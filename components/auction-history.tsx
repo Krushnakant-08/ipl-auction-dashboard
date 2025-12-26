@@ -56,7 +56,7 @@ export function AuctionHistory() {
                 .reverse()
                 .map((txn) => {
                   const player = players.find((p) => p.id === txn.playerId)
-                  const team = teams.find((t) => t.id === txn.teamId)
+                  const team = teams.find((t) => t.id === txn.soldToTeam)
 
                   if (!player || !team) return null
 
@@ -83,16 +83,16 @@ export function AuctionHistory() {
                           <div className="relative h-6 w-6 rounded-full overflow-hidden">
                             <Image
                               src={team.logo || "/placeholder.svg"}
-                              alt={team.name}
+                              alt={team.franchiseName || team.groupName}
                               fill
                               className="object-cover"
                               sizes="24px"
                             />
                           </div>
-                          <span className="text-sm font-medium">{team.name}</span>
+                          <span className="text-sm font-medium">{team.franchiseName || team.groupName}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-bold text-primary">₹{txn.price} Cr</TableCell>
+                      <TableCell className="text-right font-bold text-primary">₹{txn.soldPrice} Cr</TableCell>
                     </TableRow>
                   )
                 })}

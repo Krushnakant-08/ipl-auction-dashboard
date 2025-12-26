@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useAuction } from "@/lib/auction-context"
+import { useAuth } from "@/lib/auth-context"
 import { Navigation } from "@/components/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -9,20 +10,24 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Search, Filter } from "lucide-react"
-import type { PlayerRole, PlayerStatus, Country } from "@/lib/types"
+import type { PlayerRole, PlayerStatus } from "@/lib/types"
 
 export default function PlayersPage() {
   const { players, teams } = useAuction()
+  const { user } = useAuth()
   const [searchQuery, setSearchQuery] = useState("")
   const [roleFilter, setRoleFilter] = useState<PlayerRole | "all">("all")
-  const [countryFilter, setCountryFilter] = useState<Country | "all">("all")
+  const [countryFilter, setCountryFilter] = useState<string | "all">("all")
   const [statusFilter, setStatusFilter] = useState<PlayerStatus | "all">("all")
 
   const filteredPlayers = useMemo(() => {
     return players.filter((player) => {
       const matchesSearch = player.name.toLowerCase().includes(searchQuery.toLowerCase())
       const matchesRole = roleFilter === "all" || player.role === roleFilter
-      const matchesCountry = countryFilter === "all" || player.country === countryFilter
+      const matchesCountry = 
+        countryFilter === "all" || 
+        (countryFilter === "India" && player.country === "India") ||
+        (countryFilter === "Overseas" && player.country !== "India")
       const matchesStatus = statusFilter === "all" || player.status === statusFilter
       return matchesSearch && matchesRole && matchesCountry && matchesStatus
     })
@@ -42,9 +47,9 @@ export default function PlayersPage() {
         return "default"
       case "Bowler":
         return "secondary"
-      case "All-Rounder":
+      case "All-rounder":
         return "outline"
-      case "Wicketkeeper":
+      default:
         return "outline"
     }
   }
@@ -120,12 +125,11 @@ export default function PlayersPage() {
                     <SelectItem value="all">All Roles</SelectItem>
                     <SelectItem value="Batsman">Batsman</SelectItem>
                     <SelectItem value="Bowler">Bowler</SelectItem>
-                    <SelectItem value="All-Rounder">All-Rounder</SelectItem>
-                    <SelectItem value="Wicketkeeper">Wicketkeeper</SelectItem>
+                    <SelectItem value="All-rounder">All-rounder</SelectItem>
                   </SelectContent>
                 </Select>
 
-                <Select value={countryFilter} onValueChange={(value) => setCountryFilter(value as Country | "all")}>
+                <Select value={countryFilter} onValueChange={(value) => setCountryFilter(value)}>
                   <SelectTrigger className="w-full md:w-[150px]">
                     <SelectValue placeholder="Country" />
                   </SelectTrigger>
@@ -171,7 +175,9 @@ export default function PlayersPage() {
                     </TableRow>
                   ) : (
                     filteredPlayers.map((player) => {
-                      const team = player.soldTo ? teams.find((t) => t.id === player.soldTo) : null
+                      const team = player.currentTeam ? teams.find((t) => t.id === player.currentTeam) : null
+                      // Franchises can only see their own team's players' sold prices
+                      const canSeeSoldPrice = user?.role === "admin" || player.currentTeam === user?.teamId
                       return (
                         <TableRow key={player.id}>
                           <TableCell className="font-medium">{player.name}</TableCell>
@@ -187,9 +193,19 @@ export default function PlayersPage() {
                           <TableCell>
                             <Badge variant={getStatusBadgeVariant(player.status)}>{player.status}</Badge>
                           </TableCell>
-                          <TableCell>{team ? team.name : "-"}</TableCell>
+                          <TableCell>
+                            {canSeeSoldPrice && team 
+                              ? (team.franchiseName || team.groupName)
+                              : player.status === "Sold" 
+                              ? "●●●●●" 
+                              : "-"}
+                          </TableCell>
                           <TableCell className="text-right font-medium">
-                            {player.soldPrice ? `₹${player.soldPrice} Cr` : "-"}
+                            {player.purchasePrice
+                              ? canSeeSoldPrice
+                                ? `₹${player.purchasePrice} Cr`
+                                : "●●●●"
+                              : "-"}
                           </TableCell>
                         </TableRow>
                       )

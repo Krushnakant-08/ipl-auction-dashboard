@@ -1,6 +1,14 @@
 export type PlayerRole = "Batsman" | "Bowler" | "All-rounder"
 export type PlayerStatus = "Unsold" | "Sold"
 export type AuctionPhase = "Team Auction" | "Player Auction" | "Finalization"
+export type UserRole = "admin" | "franchise"
+
+export interface User {
+  id: string
+  role: UserRole
+  name: string
+  teamId?: string // Only for franchise users
+}
 
 export interface PlayerRatings {
   overall: number // 0-100

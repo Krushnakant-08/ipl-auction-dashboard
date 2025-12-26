@@ -2,7 +2,9 @@
 
 import { useMemo } from "react"
 import { useAuction } from "@/lib/auction-context"
+import { useAuth } from "@/lib/auth-context"
 import { Navigation } from "@/components/navigation"
+import { FranchiseDashboard } from "@/components/franchise-dashboard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DollarSign, Users, TrendingUp, Percent, ArrowRight } from "lucide-react"
@@ -12,11 +14,13 @@ import { AuctionHistory } from "@/components/auction-history"
 
 export default function DashboardPage() {
   const { teams, players, getTeamPlayers } = useAuction()
+  const { user } = useAuth()
 
   const stats = useMemo(() => {
     const soldPlayers = players.filter((p) => p.status === "Sold")
-    const totalSpent = teams.reduce((sum, t) => sum + t.spent, 0)
-    const avgPrice = soldPlayers.length > 0 ? totalSpent / soldPlayers.length : 0
+    const totalSpent = teams.reduce((sum, t) => sum + t.franchiseBid, 0) + 
+      soldPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)
+    const avgPrice = soldPlayers.length > 0 ? soldPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0) / soldPlayers.length : 0
 
     return {
       totalSpent,
@@ -27,16 +31,20 @@ export default function DashboardPage() {
   }, [teams, players])
 
   const teamSpendingData = useMemo(() => {
-    return teams.map((team) => ({
-      name: team.name ? team.name.split(" ")[0] : "Unknown", // Shortened name for chart
-      spent: team.spent,
-      remaining: team.totalBudget - team.spent,
-    }))
-  }, [teams])
+    return teams.map((team) => {
+      const teamPlayers = getTeamPlayers(team.id)
+      const spent = team.franchiseBid + teamPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)
+      return {
+        name: team.franchiseName ? team.franchiseName.split(" ")[0] : team.groupName.split(" ")[0], // Shortened name for chart
+        spent: spent,
+        remaining: team.remainingBudget,
+      }
+    })
+  }, [teams, getTeamPlayers])
 
   const roleDistributionData = useMemo(() => {
     const soldPlayers = players.filter((p) => p.status === "Sold")
-    const roles = ["Batsman", "Bowler", "All-Rounder", "Wicketkeeper"] as const
+    const roles = ["Batsman", "Bowler", "All-rounder"] as const
     return roles.map((role) => ({
       name: role,
       value: soldPlayers.filter((p) => p.role === role).length,
@@ -47,12 +55,29 @@ export default function DashboardPage() {
     const soldPlayers = players.filter((p) => p.status === "Sold")
     return [
       { name: "India", value: soldPlayers.filter((p) => p.country === "India").length },
-      { name: "Overseas", value: soldPlayers.filter((p) => p.country === "Overseas").length },
+      { name: "Overseas", value: soldPlayers.filter((p) => p.country !== "India").length },
     ]
   }, [players])
 
   const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))"]
 
+  // Show franchise dashboard if logged in as franchise
+  if (user && user.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navigation />
+        <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-foreground">My Team Dashboard</h1>
+            <p className="text-muted-foreground mt-1">Monitor your team's progress and squad details</p>
+          </div>
+          <FranchiseDashboard />
+        </main>
+      </div>
+    )
+  }
+
+  // Admin dashboard view
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -82,7 +107,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-3xl font-bold text-primary">₹{stats.totalSpent.toFixed(1)} Cr</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {((stats.totalSpent / (teams.length * teams[0]?.totalBudget || 1)) * 100).toFixed(1)}% of total budget
+                Across all {teams.length} teams
               </p>
             </CardContent>
           </Card>
@@ -224,10 +249,10 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 {players
                   .filter((p) => p.status === "Sold")
-                  .sort((a, b) => (b.soldPrice || 0) - (a.soldPrice || 0))
+                  .sort((a, b) => (b.purchasePrice || 0) - (a.purchasePrice || 0))
                   .slice(0, 5)
                   .map((player, index) => {
-                    const team = teams.find((t) => t.id === player.soldTo)
+                    const team = teams.find((t) => t.id === player.currentTeam)
                     return (
                       <div key={player.id} className="flex items-center justify-between pb-4 border-b last:border-0">
                         <div className="flex items-center gap-3">
@@ -236,11 +261,11 @@ export default function DashboardPage() {
                           </div>
                           <div>
                             <div className="font-medium">{player.name}</div>
-                            <div className="text-sm text-muted-foreground">{team?.name || "Unknown"}</div>
+                            <div className="text-sm text-muted-foreground">{team?.franchiseName || team?.groupName || "Unknown"}</div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-primary">₹{player.soldPrice} Cr</div>
+                          <div className="font-bold text-primary">₹{player.purchasePrice} Cr</div>
                           <div className="text-xs text-muted-foreground">{player.role}</div>
                         </div>
                       </div>
