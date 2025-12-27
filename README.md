@@ -9,6 +9,334 @@
 
 - **[🚀 Local Setup Guide](./LOCALHOST_SETUP.md)** - Complete guide for running on your local network
 - **[👥 Franchise Login Guide](./FRANCHISE_LOGIN_GUIDE.md)** - User authentication and permissions
+- **[🔧 Deployment Troubleshooting](./DEPLOYMENT_TROUBLESHOOTING.md)** - Fix common deployment issues
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+
+- Node.js 18+ installed
+- MongoDB Atlas account (or local MongoDB)
+- npm or pnpm package manager
+
+### Step 1: Clone and Install
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd ipl-auction-dashboard
+
+# Install dependencies
+npm install
+# or
+pnpm install
+```
+
+### Step 2: Database Setup
+
+#### Option A: MongoDB Atlas (Recommended for Production)
+
+1. **Create MongoDB Atlas Account:**
+   - Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+   - Sign up for a free account
+   - Create a new cluster (Free tier is sufficient)
+
+2. **Configure Network Access:**
+   - Go to "Network Access" in MongoDB Atlas
+   - Click "Add IP Address"
+   - For development: Add `0.0.0.0/0` (allow from anywhere)
+   - For production: Add your deployment server IPs
+
+3. **Get Connection String:**
+   - Click "Connect" on your cluster
+   - Choose "Connect your application"
+   - Copy the connection string
+   - Replace `<password>` with your database user password
+
+#### Option B: Local MongoDB
+
+```bash
+# Install MongoDB locally
+# Windows: Download from mongodb.com
+# Mac: brew install mongodb-community
+# Linux: sudo apt-get install mongodb
+
+# Start MongoDB
+mongod
+```
+
+### Step 3: Environment Configuration
+
+Create a `.env.local` file in the root directory:
+
+```env
+# MongoDB Connection
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ipl-auction?retryWrites=true&w=majority
+
+# For local MongoDB:
+# MONGODB_URI=mongodb://localhost:27017/ipl-auction
+```
+
+### Step 4: Initialize the Database
+
+**IMPORTANT:** You must initialize the database before using the application.
+
+#### Method 1: Using the API (Recommended)
+
+1. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+
+2. **Check database health:**
+   - Open browser: `http://localhost:3000/api/health`
+   - Should show: `"initialized": false`
+
+3. **Initialize with mock data:**
+   ```bash
+   # Using curl
+   curl -X POST http://localhost:3000/api/init
+
+   # Or visit in browser and use a tool like Postman
+   # POST http://localhost:3000/api/init
+   ```
+
+4. **Verify initialization:**
+   - Check: `http://localhost:3000/api/health`
+   - Should now show: `"initialized": true`
+   - Teams count: 10, Players count: 140
+
+#### Method 2: Using Browser
+
+1. Start dev server: `npm run dev`
+2. Use a REST client (Postman, Thunder Client, etc.)
+3. Send POST request to `http://localhost:3000/api/init`
+
+### Step 5: Access the Application
+
+1. **Open the application:**
+   ```
+   http://localhost:3000
+   ```
+
+2. **Login as Admin:**
+   - Password: `admin123`
+   - You'll see the admin dashboard
+
+### Step 6: Run Team Auction (Franchise Auction)
+
+1. **Admin Dashboard:**
+   - You'll see 10 groups waiting for franchise assignment
+   - Available franchises: Mumbai Indians, Chennai Super Kings, etc.
+
+2. **Assign Franchises:**
+   - Click on a group
+   - Select a franchise
+   - Enter bid amount (max: ₹120 Cr by default)
+   - Complete for all 10 groups
+
+3. **Start Player Auction:**
+   - Once all franchises are assigned
+   - Click "Start Player Auction" button
+   - System transitions to player auction phase
+
+### Step 7: Franchise Login (Optional)
+
+After franchise auction is complete:
+
+1. **Get Network URL:**
+   ```bash
+   # Windows
+   ipconfig
+   # Look for IPv4 Address: e.g., 192.168.1.100
+   
+   # Mac/Linux
+   ifconfig
+   # Look for inet address
+   ```
+
+2. **Share with franchise users:**
+   - URL: `http://YOUR_IP:3000/login`
+   - Example: `http://192.168.1.100:3000/login`
+
+3. **Franchise Login:**
+   - Password: `franchise123`
+   - Select their assigned team
+   - Access franchise dashboard
+
+### Step 8: Player Auction
+
+1. **Admin Dashboard:**
+   - View all 140 players
+   - Select a player to auction
+   - Choose team and enter bid amount
+   - Player is assigned to team
+
+2. **Franchise Dashboard:**
+   - View your squad
+   - See remaining budget
+   - Track players in real-time
+
+## 📋 Application Features
+
+### Admin Features
+- **Team Auction:** Assign franchises to groups with bid amounts
+- **Player Auction:** Sell players to teams
+- **RTM (Right to Match):** Each team can use RTM once
+- **RTS (Right to Select):** Each team can use RTS once
+- **Trading Window:** Open trading period with countdown
+- **Settings:** Configure budget, squad size, and auction rules
+
+### Franchise Features
+- **Squad View:** See all purchased players
+- **Budget Tracking:** Real-time budget updates
+- **Player Details:** View player stats and roles
+- **Trade Proposals:** Propose and respond to trades (during trading window)
+
+### Real-Time Features
+- All devices sync automatically
+- Updates appear within 2-3 seconds
+- WebSocket-based live updates
+- Database-backed persistence
+
+## 🔄 Database Management
+
+### Check Database Status
+
+```bash
+# Health check
+curl http://localhost:3000/api/health
+```
+
+Response:
+```json
+{
+  "status": "ok",
+  "database": {
+    "connected": true,
+    "initialized": true,
+    "collections": {
+      "teams": 10,
+      "players": 140,
+      "settings": 1
+    }
+  }
+}
+```
+
+### Reset Database
+
+```bash
+# Clear all data
+curl -X DELETE http://localhost:3000/api/init
+
+# Re-initialize
+curl -X POST http://localhost:3000/api/init
+```
+
+### Verify Teams
+
+```bash
+curl http://localhost:3000/api/teams
+```
+
+### Verify Players
+
+```bash
+curl http://localhost:3000/api/players
+```
+
+## 🌐 Deployment to Production
+
+### Deploy to Vercel
+
+1. **Push to GitHub:**
+   ```bash
+   git add .
+   git commit -m "Initial commit"
+   git push origin main
+   ```
+
+2. **Deploy on Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Import your GitHub repository
+   - Add environment variable: `MONGODB_URI`
+   - Deploy
+
+3. **Initialize Production Database:**
+   ```bash
+   # Check health
+   curl https://your-app.vercel.app/api/health
+   
+   # Initialize
+   curl -X POST https://your-app.vercel.app/api/init
+   
+   # Verify
+   curl https://your-app.vercel.app/api/teams
+   ```
+
+### Environment Variables for Deployment
+
+In your deployment platform (Vercel, etc.), add:
+
+```
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ipl-auction?retryWrites=true&w=majority
+```
+
+## 🔧 Troubleshooting
+
+### "Team not found in database" Error
+
+See [DEPLOYMENT_TROUBLESHOOTING.md](./DEPLOYMENT_TROUBLESHOOTING.md) for detailed solutions.
+
+Quick fix:
+```bash
+# Check if database is initialized
+curl http://your-url/api/health
+
+# If not initialized
+curl -X POST http://your-url/api/init
+```
+
+### Database Connection Errors
+
+1. Check `MONGODB_URI` in `.env.local`
+2. Verify MongoDB Atlas IP whitelist
+3. Ensure database user has correct permissions
+4. Test connection string in MongoDB Compass
+
+### Teams/Players Not Loading
+
+1. Verify database is initialized: `/api/health`
+2. Clear browser cache and refresh
+3. Check browser console for errors
+4. Re-initialize if needed: `POST /api/init`
+
+## 📱 Login Credentials
+
+- **Admin Password:** `admin123`
+- **Franchise Password:** `franchise123`
+
+**Note:** Change these in production by modifying the auth logic.
+
+## 🔍 API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Check database status |
+| `/api/init` | POST | Initialize database with mock data |
+| `/api/init` | DELETE | Clear all data |
+| `/api/teams` | GET | Get all teams |
+| `/api/teams` | POST | Create team |
+| `/api/teams` | PUT | Update team |
+| `/api/players` | GET | Get all players |
+| `/api/players` | PUT | Update player |
+| `/api/auction` | GET | Get complete auction state |
+| `/api/auction` | POST | Broadcast auction updates |
+| `/api/settings` | GET | Get auction settings |
+| `/api/settings` | PUT | Update settings |
+| `/api/transactions` | GET | Get transaction history |
+| `/api/trades` | GET/POST | Get/Create trades |
 
 ## Overview
 
