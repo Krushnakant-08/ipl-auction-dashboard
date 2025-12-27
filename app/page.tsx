@@ -163,7 +163,7 @@ export default function DashboardPage() {
               <CardDescription>Budget used vs remaining for each team</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-75">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={teamSpendingData}>
                     <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -184,7 +184,7 @@ export default function DashboardPage() {
               <CardDescription>Players sold by role</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-75">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -216,7 +216,7 @@ export default function DashboardPage() {
               <CardDescription>Indian vs Overseas players sold</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-75">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie

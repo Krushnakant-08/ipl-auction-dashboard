@@ -75,15 +75,17 @@ export default function SquadsPage() {
                       </Badge>
                     )}
                   </div>
-                  <Button
-                    onClick={() => setRtsTeamId(team.id)}
-                    disabled={!rtsValidation.can}
-                    variant="outline"
-                    size="lg"
-                  >
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Use RTS
-                  </Button>
+                  {user?.role === "admin" && (
+                    <Button
+                      onClick={() => setRtsTeamId(team.id)}
+                      disabled={!rtsValidation.can}
+                      variant="outline"
+                      size="lg"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Use RTS
+                    </Button>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
