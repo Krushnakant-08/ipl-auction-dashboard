@@ -76,7 +76,9 @@ export interface Trade {
   proposedTo: string // team ID
   proposedToName: string
   offeredPlayers: string[] // player IDs from proposing team
+  offeredPlayerNames: string[] // player names from proposing team
   requestedPlayers: string[] // player IDs from target team
+  requestedPlayerNames: string[] // player names from target team
   status: TradeStatus
   proposedAt: Date
   respondedAt?: Date | null

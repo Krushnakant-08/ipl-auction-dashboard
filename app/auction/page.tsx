@@ -51,7 +51,7 @@ export default function AuctionPage() {
   const selectedGroup = teams.find((t) => t.id === selectedGroupId)
   const selectedFranchise = availableFranchises.find((f) => f.id === selectedFranchiseId)
 
-  const handleAssignFranchise = () => {
+  const handleAssignFranchise = async () => {
     if (!selectedGroupId || !selectedFranchiseId || !franchiseBid) {
       return
     }
@@ -61,7 +61,7 @@ export default function AuctionPage() {
       return
     }
 
-    const success = assignFranchise(selectedGroupId, selectedFranchiseId, bid)
+    const success = await assignFranchise(selectedGroupId, selectedFranchiseId, bid)
     if (success) {
       setSelectedGroupId("")
       setSelectedFranchiseId("")
@@ -69,11 +69,17 @@ export default function AuctionPage() {
     }
   }
 
-  const handleStartPlayerAuction = () => {
-    startPlayerAuction()
+  const handleStartPlayerAuction = async () => {
+    console.log('🎬 Starting player auction...')
+    try {
+      await startPlayerAuction()
+      console.log('✅ Player auction started successfully')
+    } catch (error) {
+      console.error('❌ Failed to start player auction:', error)
+    }
   }
 
-  const handleConfirmSale = () => {
+  const handleConfirmSale = async () => {
     if (!selectedPlayerId || !selectedTeamId || !soldPrice) {
       return
     }
@@ -83,7 +89,7 @@ export default function AuctionPage() {
       return
     }
 
-    const success = sellPlayer(selectedPlayerId, selectedTeamId, price)
+    const success = await sellPlayer(selectedPlayerId, selectedTeamId, price)
     if (success) {
       const player = players.find((p) => p.id === selectedPlayerId)
       if (player?.originalTeam && player.originalTeam !== selectedTeamId) {
@@ -190,9 +196,6 @@ export default function AuctionPage() {
                             <SelectItem key={franchise.id} value={franchise.id}>
                               <div className="flex items-center gap-2">
                                 <span className="font-medium">{franchise.name}</span>
-                                <Badge variant="outline" className="text-xs">
-                                  {franchise.city}
-                                </Badge>
                               </div>
                             </SelectItem>
                           ))
@@ -335,9 +338,6 @@ export default function AuctionPage() {
                     {availableFranchisesForAuction.map((franchise) => (
                       <div key={franchise.id} className="p-2 rounded-lg border bg-card">
                         <div className="font-medium text-sm">{franchise.name}</div>
-                        <Badge variant="outline" className="text-xs mt-1">
-                          {franchise.city}
-                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -350,7 +350,7 @@ export default function AuctionPage() {
         {isPlayerAuctionPhase && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Auction Panel */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-6 order-1 lg:order-1">
               <Card className="border-primary">
                 <CardHeader className="bg-primary/5">
                   <CardTitle className="flex items-center gap-2">
@@ -494,10 +494,10 @@ export default function AuctionPage() {
                 </CardContent>
               </Card>
 
-              {/* Recent Transactions */}
-              <Card>
+              {/* Recent Transactions - Now more visible on mobile */}
+              <Card className="order-2 lg:order-0">
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
+                  <CardTitle className="flex items-center justify-between flex-wrap gap-2">
                     <span>Recent Transactions</span>
                     {transactions.length > 0 && (
                       <Button variant="outline" size="sm" onClick={undoLastTransaction}>
@@ -520,15 +520,15 @@ export default function AuctionPage() {
                         return (
                           <div
                             key={txn.id}
-                            className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                            className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors gap-2"
                           >
-                            <div className="flex-1">
-                              <div className="font-medium">{player.name}</div>
-                              <div className="text-sm text-muted-foreground">
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium truncate">{player.name}</div>
+                              <div className="text-sm text-muted-foreground truncate">
                                 {team.franchiseName || team.groupName}
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-left sm:text-right shrink-0">
                               <div className="font-bold text-primary">₹{txn.soldPrice} Cr</div>
                               <div className="text-xs text-muted-foreground">
                                 {new Date(txn.timestamp).toLocaleTimeString()}
@@ -544,7 +544,7 @@ export default function AuctionPage() {
             </div>
 
             {/* Quick Stats Sidebar */}
-            <div className="space-y-6">
+            <div className="space-y-6 order-3 lg:order-2">
               <Card>
                 <CardHeader>
                   <CardTitle>Auction Progress</CardTitle>
@@ -581,7 +581,7 @@ export default function AuctionPage() {
                   <div className="pt-4 border-t">
                     <div className="text-sm text-muted-foreground mb-1">Total Spent</div>
                     <div className="text-2xl font-bold text-primary">
-                      ₹{teams.reduce((sum, t) => sum + (t.totalBudget || 0) - (t.remainingBudget || 0), 0).toFixed(1)}{" "}
+                      ₹{teams.reduce((sum, t) => sum + t.franchiseBid + (settings.initialBudget - t.remainingBudget - t.franchiseBid), 0).toFixed(1)}{" "}
                       Cr
                     </div>
                   </div>

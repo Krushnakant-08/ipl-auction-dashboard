@@ -11,6 +11,7 @@ import { DollarSign, Users, TrendingUp, Percent, ArrowRight } from "lucide-react
 import Link from "next/link"
 import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Legend, Cell } from "recharts"
 import { AuctionHistory } from "@/components/auction-history"
+import { TradingHistory } from "@/components/trading-history"
 
 export default function DashboardPage() {
   const { teams, players, getTeamPlayers } = useAuction()
@@ -33,11 +34,13 @@ export default function DashboardPage() {
   const teamSpendingData = useMemo(() => {
     return teams.map((team) => {
       const teamPlayers = getTeamPlayers(team.id)
-      const spent = team.franchiseBid + teamPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)
+      const playersCost = teamPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)
+      const spent = team.franchiseBid + playersCost
       return {
         name: team.franchiseName ? team.franchiseName.split(" ")[0] : team.groupName.split(" ")[0], // Shortened name for chart
-        spent: spent,
-        remaining: team.remainingBudget,
+        spent: Number(spent.toFixed(1)),
+        remaining: Number(team.remainingBudget.toFixed(1)),
+        total: Number((spent + team.remainingBudget).toFixed(1)),
       }
     })
   }, [teams, getTeamPlayers])
@@ -60,6 +63,7 @@ export default function DashboardPage() {
   }, [players])
 
   const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))"]
+  const PIE_COLORS = ["#8b5cf6", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#ec4899"]
 
   // Show franchise dashboard if logged in as franchise
   if (user && user.role !== "admin") {
@@ -167,10 +171,15 @@ export default function DashboardPage() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={teamSpendingData}>
                     <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis 
+                      stroke="hsl(var(--muted-foreground))" 
+                      fontSize={12}
+                      domain={[0, 'auto']}
+                      label={{ value: 'Budget (₹ Cr)', angle: -90, position: 'insideLeft' }}
+                    />
                     <Legend />
-                    <Bar dataKey="spent" fill="hsl(var(--chart-1))" name="Spent" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="remaining" fill="hsl(var(--chart-2))" name="Remaining" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="spent" fill="#ef4444" name="Spent" radius={[4, 4, 0, 0]} stackId="a" />
+                    <Bar dataKey="remaining" fill="#10b981" name="Remaining" radius={[4, 4, 0, 0]} stackId="a" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -198,7 +207,7 @@ export default function DashboardPage() {
                       dataKey="value"
                     >
                       {roleDistributionData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
                   </PieChart>
@@ -230,7 +239,7 @@ export default function DashboardPage() {
                       dataKey="value"
                     >
                       {countryDistributionData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index + 3 % PIE_COLORS.length]} />
                       ))}
                     </Pie>
                   </PieChart>
@@ -281,6 +290,11 @@ export default function DashboardPage() {
 
         {/* Auction History Panel */}
         <AuctionHistory />
+
+        {/* Trading History Panel */}
+        <div className="mt-6">
+          <TradingHistory />
+        </div>
       </main>
     </div>
   )

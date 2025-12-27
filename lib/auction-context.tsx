@@ -16,26 +16,26 @@ interface AuctionContextType {
   availableFranchises: typeof availableFranchises
 
   // Team Auction
-  assignFranchise: (teamId: string, franchiseId: string, bidAmount: number) => boolean
+  assignFranchise: (teamId: string, franchiseId: string, bidAmount: number) => Promise<boolean>
   canStartPlayerAuction: () => boolean
-  startPlayerAuction: () => void
+  startPlayerAuction: () => Promise<void>
 
   // Player Auction
-  sellPlayer: (playerId: string, teamId: string, price: number) => boolean
+  sellPlayer: (playerId: string, teamId: string, price: number) => Promise<boolean>
 
   // Trading Window
-  startTradingWindow: (durationMinutes: number) => void
-  proposeTrade: (proposedBy: string, proposedTo: string, offeredPlayers: string[], requestedPlayers: string[], message?: string) => boolean
-  respondToTrade: (tradeId: string, accept: boolean) => boolean
-  cancelTrade: (tradeId: string, teamId: string) => boolean
-  approveTrade: (tradeId: string, approve: boolean) => boolean
+  startTradingWindow: (durationMinutes: number) => Promise<void>
+  proposeTrade: (proposedBy: string, proposedTo: string, offeredPlayers: string[], requestedPlayers: string[], message?: string) => Promise<boolean>
+  respondToTrade: (tradeId: string, accept: boolean) => Promise<boolean>
+  cancelTrade: (tradeId: string, teamId: string) => Promise<boolean>
+  approveTrade: (tradeId: string, approve: boolean) => Promise<boolean>
 
   // RTM
-  useRTM: (playerId: string, originalTeamId: string) => boolean
+  useRTM: (playerId: string, originalTeamId: string) => Promise<boolean>
   canUseRTM: (playerId: string, teamId: string) => { can: boolean; reason?: string }
 
   // RTS
-  useRTS: (playerId: string, teamId: string) => boolean
+  useRTS: (playerId: string, teamId: string) => Promise<boolean>
   canUseRTS: (teamId: string) => { can: boolean; reason?: string }
 
   // Utilities
@@ -64,8 +64,23 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const loadFromServer = async () => {
       try {
-        const response = await fetch('/api/auction')
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime()
+        const response = await fetch(`/api/auction?t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+          },
+        })
         const data = await response.json()
+        
+        console.log('📥 Loading from database:', {
+          settings: data.settings?.initialBudget,
+          teams: data.teams?.length,
+          players: data.players?.length,
+        })
         
         if (data.settings) setSettings(data.settings)
         if (data.teams) setTeams(data.teams)
@@ -115,43 +130,78 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isInitialized])
 
-  // Save to server whenever state changes (debounced)
+  // Save to server whenever state changes (debounced) - DISABLED for explicit DB updates
+  // Settings changes are saved immediately via API calls in specific functions
   useEffect(() => {
     if (!isInitialized) return
 
-    const saveToServer = async () => {
+    // Only auto-save settings phase changes
+    const saveSettingsChanges = async () => {
       try {
         isSavingRef.current = true
-        await fetch('/api/auction', {
-          method: 'POST',
+        await fetch('/api/settings', {
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            settings,
-            teams,
-            players,
-            transactions,
-            trades,
-          }),
+          body: JSON.stringify(settings),
         })
         isSavingRef.current = false
       } catch (error) {
-        console.error('Failed to save auction state:', error)
+        console.error('Failed to save settings:', error)
         isSavingRef.current = false
       }
     }
 
-    // Debounce: only save after 500ms of no changes
-    const timeoutId = setTimeout(saveToServer, 500)
+    // Only save when phase changes (not on every state update)
+    const timeoutId = setTimeout(saveSettingsChanges, 500)
     return () => clearTimeout(timeoutId)
-  }, [settings, teams, players, transactions, trades, isInitialized])
+  }, [settings.currentPhase, settings.tradingWindowEnd, isInitialized])
 
   const getTeamById = useCallback((teamId: string) => teams.find((t) => t.id === teamId), [teams])
   const getPlayerById = useCallback((playerId: string) => players.find((p) => p.id === playerId), [players])
   const getTeamPlayers = useCallback((teamId: string) => players.filter((p) => p.currentTeam === teamId), [players])
 
+  // Helper function to broadcast updates to all clients
+  const broadcastUpdate = useCallback(async () => {
+    try {
+      // Fetch fresh data from database
+      const [teamsRes, playersRes, transactionsRes, tradesRes, settingsRes] = await Promise.all([
+        fetch('/api/teams', { cache: 'no-store' }),
+        fetch('/api/players', { cache: 'no-store' }),
+        fetch('/api/transactions', { cache: 'no-store' }),
+        fetch('/api/trades', { cache: 'no-store' }),
+        fetch('/api/settings', { cache: 'no-store' }),
+      ])
+
+      const [freshTeams, freshPlayers, freshTransactions, freshTrades, freshSettings] = await Promise.all([
+        teamsRes.json(),
+        playersRes.json(),
+        transactionsRes.json(),
+        tradesRes.json(),
+        settingsRes.json(),
+      ])
+
+      // Broadcast to WebSocket
+      await fetch('/api/auction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          settings: freshSettings,
+          teams: freshTeams,
+          players: freshPlayers,
+          transactions: freshTransactions,
+          trades: freshTrades,
+        }),
+      })
+
+      console.log('📡 Broadcast update sent:', { phase: freshSettings.currentPhase })
+    } catch (error) {
+      console.error('Failed to broadcast update:', error)
+    }
+  }, [])
+
   // Team Auction: Assign franchise to team
   const assignFranchise = useCallback(
-    (teamId: string, franchiseId: string, bidAmount: number) => {
+    async (teamId: string, franchiseId: string, bidAmount: number) => {
       console.log('🎯 assignFranchise called:', { teamId, franchiseId, bidAmount })
       
       const team = getTeamById(teamId)
@@ -183,61 +233,143 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return false
       }
 
-      console.log('✅ Updating team with franchise')
-      setTeams((prev) =>
-        prev.map((t) =>
-          t.id === teamId
-            ? {
-                ...t,
-                franchiseName: franchise.name,
-                franchiseBid: bidAmount,
-                remainingBudget: settings.initialBudget - bidAmount,
-                logo: franchise.logo,
-                teamAuctionComplete: true,
-              }
-            : t,
-        ),
-      )
+      console.log('✅ Updating team with franchise - verifying with database')
+      
+      try {
+        // Verify current budget from database
+        const dbTeamResponse = await fetch(`/api/teams`)
+        const dbTeams = await dbTeamResponse.json()
+        const dbTeam = dbTeams.find((t: any) => t.id === teamId)
+        
+        if (!dbTeam) {
+          toast({ title: "Error", description: "Team not found in database", variant: "destructive" })
+          return false
+        }
 
-      toast({
-        title: "Franchise Assigned!",
-        description: `${team.groupName} won ${franchise.name} for ₹${bidAmount} Cr`,
-      })
+        // Calculate new remaining budget based on DB data
+        const newRemainingBudget = dbTeam.remainingBudget - bidAmount
+        
+        if (newRemainingBudget < 0) {
+          toast({ title: "Insufficient Budget", description: "Not enough budget in database", variant: "destructive" })
+          return false
+        }
 
-      return true
+        // Update database immediately
+        const updatedTeam = {
+          ...dbTeam,
+          franchiseName: franchise.name,
+          franchiseBid: bidAmount,
+          remainingBudget: newRemainingBudget,
+          logo: franchise.logo,
+          teamAuctionComplete: true,
+        }
+
+        const updateResponse = await fetch('/api/teams', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTeam),
+        })
+
+        if (!updateResponse.ok) {
+          throw new Error('Failed to update team in database')
+        }
+
+        const savedTeam = await updateResponse.json()
+        console.log('✅ Team updated in database:', savedTeam)
+
+        // Update local state with verified DB data
+        setTeams((prev) =>
+          prev.map((t) => t.id === teamId ? savedTeam : t)
+        )
+
+        // Broadcast update to all connected clients
+        await broadcastUpdate()
+
+        toast({
+          title: "Franchise Assigned!",
+          description: `${team.groupName} won ${franchise.name} for ₹${bidAmount} Cr`,
+        })
+
+        return true
+      } catch (error) {
+        console.error('❌ Error assigning franchise:', error)
+        toast({ title: "Error", description: "Failed to assign franchise", variant: "destructive" })
+        return false
+      }
     },
-    [getTeamById, teams, settings, toast],
+    [getTeamById, teams, settings, toast, broadcastUpdate],
   )
 
   const canStartPlayerAuction = useCallback(() => {
     return teams.every((t) => t.teamAuctionComplete)
   }, [teams])
 
-  const startPlayerAuction = useCallback(() => {
-    // Auto-complete teams that have franchises assigned but not marked complete
-    setTeams((prev) => 
-      prev.map((t) => 
+  const startPlayerAuction = useCallback(async () => {
+    try {
+      // Auto-complete teams that have franchises assigned but not marked complete
+      const updatedTeams = teams.map((t) => 
         t.franchiseName && !t.teamAuctionComplete 
           ? { ...t, teamAuctionComplete: true } 
           : t
       )
-    )
 
-    setSettings((prev) => {
-      const newSettings: AuctionSettings = { ...prev, currentPhase: "Player Auction" }
-      console.log('Starting player auction, new phase:', newSettings.currentPhase)
-      return newSettings
-    })
-    
-    toast({
-      title: "Player Auction Started!",
-      description: "Teams can now bid for players",
-    })
-  }, [toast])
+      // Update teams in database if any changed
+      const teamsToUpdate = updatedTeams.filter((t, i) => 
+        t.teamAuctionComplete !== teams[i].teamAuctionComplete
+      )
+      
+      await Promise.all(
+        teamsToUpdate.map((team) =>
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(team),
+          })
+        )
+      )
+
+      // Update settings in database
+      const newSettings: AuctionSettings = { 
+        initialBudget: settings.initialBudget,
+        minSquadSize: settings.minSquadSize,
+        maxSquadSize: settings.maxSquadSize,
+        currentPhase: "Player Auction",
+        tradingWindowEnd: settings.tradingWindowEnd,
+      }
+      
+      const settingsResponse = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings),
+      })
+
+      if (!settingsResponse.ok) {
+        throw new Error('Failed to update settings in database')
+      }
+
+      const savedSettings = await settingsResponse.json()
+      console.log('✅ Player auction started - Phase updated in database:', savedSettings)
+
+      // Update local state
+      setTeams(updatedTeams)
+      setSettings(savedSettings)
+
+      // Broadcast update to all clients
+      await broadcastUpdate()
+      
+      toast({
+        title: "Player Auction Started!",
+        description: "Teams can now bid for players",
+      })
+    } catch (error) {
+      console.error('❌ Error starting player auction:', error)
+      toast({ title: "Error", description: "Failed to start player auction", variant: "destructive" })
+    }
+  }, [teams, settings, toast, broadcastUpdate])
 
   // Player Auction: Sell player to team
   const sellPlayer = useCallback(
-    (playerId: string, teamId: string, price: number) => {
+    async (playerId: string, teamId: string, price: number) => {
       const player = getPlayerById(playerId)
       const team = getTeamById(teamId)
 
@@ -279,52 +411,140 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return false
       }
 
-      // Update player
-      setPlayers((prev) =>
-        prev.map((p) =>
-          p.id === playerId
-            ? { ...p, status: "Sold", currentTeam: teamId, purchasePrice: price, originalTeam: teamId }
-            : p,
-        ),
-      )
+      console.log('💰 Processing player sale - verifying with database')
+      
+      try {
+        // Verify team budget from database
+        const dbTeamResponse = await fetch(`/api/teams`)
+        const dbTeams = await dbTeamResponse.json()
+        const dbTeam = dbTeams.find((t: any) => t.id === teamId)
+        
+        if (!dbTeam) {
+          toast({ title: "Error", description: "Team not found in database", variant: "destructive" })
+          return false
+        }
 
-      // Update team
-      setTeams((prev) =>
-        prev.map((t) =>
-          t.id === teamId
-            ? {
-                ...t,
-                remainingBudget: t.remainingBudget - price,
-                squadPlayerIds: [...t.squadPlayerIds, playerId],
-              }
-            : t,
-        ),
-      )
+        // Verify player status from database
+        const dbPlayerResponse = await fetch(`/api/players`)
+        const dbPlayers = await dbPlayerResponse.json()
+        const dbPlayer = dbPlayers.find((p: any) => p.id === playerId)
+        
+        if (!dbPlayer) {
+          toast({ title: "Error", description: "Player not found in database", variant: "destructive" })
+          return false
+        }
 
-      // Record transaction
-      const transaction: AuctionTransaction = {
-        id: `txn-${Date.now()}`,
-        playerId,
-        playerName: player.name,
-        soldPrice: price,
-        soldToTeam: teamId,
-        soldToTeamName: team.franchiseName || team.groupName,
-        timestamp: new Date(),
-        rtmUsedBy: null,
-        rtsUsedBy: null,
-        type: "sale",
+        if (dbPlayer.status === 'Sold') {
+          toast({ title: "Error", description: "Player already sold in database", variant: "destructive" })
+          return false
+        }
+
+        // Verify budget availability
+        if (price > dbTeam.remainingBudget) {
+          toast({
+            title: "Insufficient Budget",
+            description: `Only ₹${dbTeam.remainingBudget} Cr remaining in database`,
+            variant: "destructive",
+          })
+          return false
+        }
+
+        // Calculate new values
+        const newRemainingBudget = dbTeam.remainingBudget - price
+        const newSquadPlayerIds = [...(dbTeam.squadPlayerIds || []), playerId]
+
+        // Update player in database
+        const updatedPlayer = {
+          ...dbPlayer,
+          status: 'Sold',
+          currentTeam: teamId,
+          purchasePrice: price,
+          originalTeam: teamId,
+        }
+
+        const playerUpdateResponse = await fetch('/api/players', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedPlayer),
+        })
+
+        if (!playerUpdateResponse.ok) {
+          throw new Error('Failed to update player in database')
+        }
+
+        // Update team in database
+        const updatedTeam = {
+          ...dbTeam,
+          remainingBudget: newRemainingBudget,
+          squadPlayerIds: newSquadPlayerIds,
+        }
+
+        const teamUpdateResponse = await fetch('/api/teams', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTeam),
+        })
+
+        if (!teamUpdateResponse.ok) {
+          throw new Error('Failed to update team in database')
+        }
+
+        // Create transaction record
+        const transaction: AuctionTransaction = {
+          id: `txn-${Date.now()}`,
+          playerId,
+          playerName: player.name,
+          soldPrice: price,
+          soldToTeam: teamId,
+          soldToTeamName: team.franchiseName || team.groupName,
+          timestamp: new Date(),
+          rtmUsedBy: null,
+          rtsUsedBy: null,
+          type: "sale",
+        }
+
+        // Save transaction to database
+        const transactionResponse = await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transaction),
+        })
+
+        if (!transactionResponse.ok) {
+          console.warn('Failed to save transaction, but sale completed')
+        }
+
+        const savedPlayer = await playerUpdateResponse.json()
+        const savedTeam = await teamUpdateResponse.json()
+
+        console.log('✅ Player sold - Database updated:', {
+          player: savedPlayer.name,
+          team: savedTeam.franchiseName || savedTeam.groupName,
+          price,
+          newBudget: savedTeam.remainingBudget,
+        })
+
+        // Update local state with verified DB data
+        setPlayers((prev) => prev.map((p) => p.id === playerId ? savedPlayer : p))
+        setTeams((prev) => prev.map((t) => t.id === teamId ? savedTeam : t))
+        setTransactions((prev) => [...prev, transaction])
+
+        // Broadcast update to all clients
+        await broadcastUpdate()
+
+        toast({
+          title: "Player Sold!",
+          description: `${player.name} sold to ${team.franchiseName || team.groupName} for ₹${price} Cr`,
+        })
+
+        return true
+      } catch (error) {
+        console.error('❌ Error selling player:', error)
+        toast({ title: "Error", description: "Failed to complete sale", variant: "destructive" })
+        return false
       }
-
-      setTransactions((prev) => [...prev, transaction])
-
-      toast({
-        title: "Player Sold!",
-        description: `${player.name} sold to ${team.franchiseName || team.groupName} for ₹${price} Cr`,
-      })
-
-      return true
     },
-    [getPlayerById, getTeamById, settings, toast],
+    [getPlayerById, getTeamById, settings, toast, broadcastUpdate],
   )
 
   // RTM: Check if team can use RTM on a player
@@ -369,7 +589,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
 
   // RTM: Use Right to Match
   const useRTM = useCallback(
-    (playerId: string, originalTeamId: string) => {
+    async (playerId: string, originalTeamId: string) => {
       const validation = canUseRTM(playerId, originalTeamId)
       if (!validation.can) {
         toast({ title: "Cannot Use RTM", description: validation.reason, variant: "destructive" })
@@ -381,57 +601,117 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       const currentTeam = getTeamById(player.currentTeam!)!
       const rtmPrice = player.purchasePrice!
 
-      // Refund current team
-      setTeams((prev) =>
-        prev.map((t) => {
-          if (t.id === currentTeam.id) {
-            return {
-              ...t,
-              remainingBudget: t.remainingBudget + rtmPrice,
-              squadPlayerIds: t.squadPlayerIds.filter((id) => id !== playerId),
-            }
-          }
-          if (t.id === originalTeamId) {
-            return {
-              ...t,
-              remainingBudget: t.remainingBudget - rtmPrice,
-              squadPlayerIds: [...t.squadPlayerIds, playerId],
-              rtmUsed: true,
-            }
-          }
-          return t
-        }),
-      )
+      console.log('🔄 Processing RTM - verifying with database')
 
-      // Update player
-      setPlayers((prev) =>
-        prev.map((p) => (p.id === playerId ? { ...p, currentTeam: originalTeamId, purchasePrice: rtmPrice } : p)),
-      )
+      try {
+        // Verify from database
+        const [dbTeamsResponse, dbPlayersResponse] = await Promise.all([
+          fetch('/api/teams'),
+          fetch('/api/players')
+        ])
 
-      // Record transaction
-      const transaction: AuctionTransaction = {
-        id: `txn-${Date.now()}`,
-        playerId,
-        playerName: player.name,
-        soldPrice: rtmPrice,
-        soldToTeam: originalTeamId,
-        soldToTeamName: originalTeam.franchiseName || originalTeam.groupName,
-        timestamp: new Date(),
-        rtmUsedBy: originalTeamId,
-        rtsUsedBy: null,
-        type: "rtm",
+        const dbTeams = await dbTeamsResponse.json()
+        const dbPlayers = await dbPlayersResponse.json()
+
+        const dbCurrentTeam = dbTeams.find((t: any) => t.id === currentTeam.id)
+        const dbOriginalTeam = dbTeams.find((t: any) => t.id === originalTeamId)
+        const dbPlayer = dbPlayers.find((p: any) => p.id === playerId)
+
+        if (!dbCurrentTeam || !dbOriginalTeam || !dbPlayer) {
+          toast({ title: "Error", description: "Data not found in database", variant: "destructive" })
+          return false
+        }
+
+        // Update current team (refund)
+        const updatedCurrentTeam = {
+          ...dbCurrentTeam,
+          remainingBudget: dbCurrentTeam.remainingBudget + rtmPrice,
+          squadPlayerIds: (dbCurrentTeam.squadPlayerIds || []).filter((id: string) => id !== playerId),
+        }
+
+        // Update original team (deduct and add player)
+        const updatedOriginalTeam = {
+          ...dbOriginalTeam,
+          remainingBudget: dbOriginalTeam.remainingBudget - rtmPrice,
+          squadPlayerIds: [...(dbOriginalTeam.squadPlayerIds || []), playerId],
+          rtmUsed: true,
+        }
+
+        // Update player
+        const updatedPlayer = {
+          ...dbPlayer,
+          currentTeam: originalTeamId,
+          purchasePrice: rtmPrice,
+        }
+
+        // Execute updates
+        await Promise.all([
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedCurrentTeam),
+          }),
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedOriginalTeam),
+          }),
+          fetch('/api/players', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedPlayer),
+          }),
+        ])
+
+        // Record transaction
+        const transaction: AuctionTransaction = {
+          id: `txn-${Date.now()}`,
+          playerId,
+          playerName: player.name,
+          soldPrice: rtmPrice,
+          soldToTeam: originalTeamId,
+          soldToTeamName: originalTeam.franchiseName || originalTeam.groupName,
+          timestamp: new Date(),
+          rtmUsedBy: originalTeamId,
+          rtsUsedBy: null,
+          type: "rtm",
+        }
+
+        await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transaction),
+        })
+
+        console.log('✅ RTM processed - Database updated')
+
+        // Update local state with fresh data
+        const [newTeams, newPlayers, newTransactions] = await Promise.all([
+          fetch('/api/teams').then(r => r.json()),
+          fetch('/api/players').then(r => r.json()),
+          fetch('/api/transactions').then(r => r.json())
+        ])
+
+        setTeams(newTeams)
+        setPlayers(newPlayers)
+        setTransactions(newTransactions)
+
+        // Broadcast update to all clients
+        await broadcastUpdate()
+
+        toast({
+          title: "RTM Used!",
+          description: `${originalTeam.franchiseName || originalTeam.groupName} matched ₹${rtmPrice} Cr for ${player.name}`,
+        })
+
+        return true
+      } catch (error) {
+        console.error('❌ Error processing RTM:', error)
+        toast({ title: "Error", description: "Failed to process RTM", variant: "destructive" })
+        return false
       }
-
-      setTransactions((prev) => [...prev, transaction])
-
-      toast({
-        title: "RTM Used!",
-        description: `${originalTeam.franchiseName || originalTeam.groupName} matched ₹${rtmPrice} Cr for ${player.name}`,
-      })
-
-      return true
     },
-    [canUseRTM, getPlayerById, getTeamById, toast],
+    [canUseRTM, getPlayerById, getTeamById, toast, broadcastUpdate],
   )
 
   // RTS: Check if team can use RTS
@@ -458,7 +738,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
 
   // RTS: Use Right to Sell
   const useRTS = useCallback(
-    (playerId: string, teamId: string) => {
+    async (playerId: string, teamId: string) => {
       const validation = canUseRTS(teamId)
       if (!validation.can) {
         toast({ title: "Cannot Use RTS", description: validation.reason, variant: "destructive" })
@@ -480,49 +760,96 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
 
       const refundAmount = player.purchasePrice || 0
 
-      // Refund team and remove player
-      setTeams((prev) =>
-        prev.map((t) =>
-          t.id === teamId
-            ? {
-                ...t,
-                remainingBudget: t.remainingBudget + refundAmount,
-                squadPlayerIds: t.squadPlayerIds.filter((id) => id !== playerId),
-                rtsUsed: true,
-              }
-            : t,
-        ),
-      )
+      console.log('🔄 Processing RTS - verifying with database')
 
-      // Update player
-      setPlayers((prev) =>
-        prev.map((p) => (p.id === playerId ? { ...p, status: "Unsold", currentTeam: null, purchasePrice: null } : p)),
-      )
+      try {
+        // Verify from database
+        const dbTeamsResponse = await fetch('/api/teams')
+        const dbTeams = await dbTeamsResponse.json()
+        const dbTeam = dbTeams.find((t: any) => t.id === teamId)
 
-      // Record transaction
-      const transaction: AuctionTransaction = {
-        id: `txn-${Date.now()}`,
-        playerId,
-        playerName: player.name,
-        soldPrice: -refundAmount,
-        soldToTeam: teamId,
-        soldToTeamName: team.franchiseName || team.groupName,
-        timestamp: new Date(),
-        rtmUsedBy: null,
-        rtsUsedBy: teamId,
-        type: "rts",
+        const dbPlayersResponse = await fetch('/api/players')
+        const dbPlayers = await dbPlayersResponse.json()
+        const dbPlayer = dbPlayers.find((p: any) => p.id === playerId)
+
+        if (!dbTeam || !dbPlayer) {
+          toast({ title: "Error", description: "Data not found in database", variant: "destructive" })
+          return false
+        }
+
+        // Update team (refund and remove player)
+        const updatedTeam = {
+          ...dbTeam,
+          remainingBudget: dbTeam.remainingBudget + refundAmount,
+          squadPlayerIds: (dbTeam.squadPlayerIds || []).filter((id: string) => id !== playerId),
+          rtsUsed: true,
+        }
+
+        // Update player (return to pool)
+        const updatedPlayer = {
+          ...dbPlayer,
+          status: 'Unsold',
+          currentTeam: null,
+          purchasePrice: null,
+        }
+
+        // Execute updates
+        await Promise.all([
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTeam),
+          }),
+          fetch('/api/players', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedPlayer),
+          }),
+        ])
+
+        // Record transaction
+        const transaction: AuctionTransaction = {
+          id: `txn-${Date.now()}`,
+          playerId,
+          playerName: player.name,
+          soldPrice: -refundAmount,
+          soldToTeam: teamId,
+          soldToTeamName: team.franchiseName || team.groupName,
+          timestamp: new Date(),
+          rtmUsedBy: null,
+          rtsUsedBy: teamId,
+          type: "rts",
+        }
+
+        await fetch('/api/transactions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(transaction),
+        })
+
+        console.log('✅ RTS completed - Database updated')
+
+        // Update local state
+        setTeams((prev) => prev.map((t) => t.id === teamId ? updatedTeam : t))
+        setPlayers((prev) => prev.map((p) => p.id === playerId ? updatedPlayer : p))
+        setTransactions((prev) => [...prev, transaction])
+
+        // Broadcast update to all clients
+        await broadcastUpdate()
+
+        toast({
+          title: "RTS Used!",
+          description: `${player.name} returned to auction pool. Refund: ₹${refundAmount} Cr`,
+        })
+
+        return true
+      } catch (error) {
+        console.error('❌ Error using RTS:', error)
+        toast({ title: "Error", description: "Failed to use RTS", variant: "destructive" })
+        return false
       }
-
-      setTransactions((prev) => [...prev, transaction])
-
-      toast({
-        title: "RTS Used!",
-        description: `${player.name} returned to auction pool. Refund: ₹${refundAmount} Cr`,
-      })
-
-      return true
     },
-    [canUseRTS, getPlayerById, getTeamById, toast],
+    [canUseRTS, getPlayerById, getTeamById, toast, broadcastUpdate],
   )
 
   const undoLastTransaction = useCallback(() => {
@@ -608,21 +935,46 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   }, [toast])
 
   // Trading Window: Start trading phase
-  const startTradingWindow = useCallback((durationMinutes: number) => {
-    const endTime = new Date(Date.now() + durationMinutes * 60 * 1000)
-    setSettings(prev => ({
-      ...prev,
-      currentPhase: "Trading Window",
-      tradingWindowEnd: endTime
-    }))
-    toast({
-      title: "Trading Window Opened",
-      description: `Trading will close in ${durationMinutes} minutes`
-    })
-  }, [toast])
+  const startTradingWindow = useCallback(async (durationMinutes: number) => {
+    try {
+      const endTime = new Date(Date.now() + durationMinutes * 60 * 1000)
+      const newSettings = {
+        initialBudget: settings.initialBudget,
+        minSquadSize: settings.minSquadSize,
+        maxSquadSize: settings.maxSquadSize,
+        currentPhase: "Trading Window" as const,
+        tradingWindowEnd: endTime
+      }
+
+      // Save to database
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update settings')
+      }
+
+      const savedSettings = await response.json()
+      setSettings(savedSettings)
+
+      // Broadcast update
+      await broadcastUpdate()
+
+      toast({
+        title: "Trading Window Opened",
+        description: `Trading will close in ${durationMinutes} minutes`
+      })
+    } catch (error) {
+      console.error('❌ Error starting trading window:', error)
+      toast({ title: "Error", description: "Failed to start trading window", variant: "destructive" })
+    }
+  }, [settings, toast, broadcastUpdate])
 
   // Trading Window: Propose a trade
-  const proposeTrade = useCallback((
+  const proposeTrade = useCallback(async (
     proposedBy: string,
     proposedTo: string,
     offeredPlayers: string[],
@@ -647,52 +999,101 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       return false
     }
 
-    // Verify all offered players belong to proposing team
-    const invalidOffered = offeredPlayers.some(pid => {
-      const player = getPlayerById(pid)
-      return !player || player.currentTeam !== proposedBy
-    })
-
-    if (invalidOffered) {
-      toast({ title: "Error", description: "You can only trade your own players", variant: "destructive" })
+    // Enforce 1-for-1 player trades only
+    if (offeredPlayers.length !== 1 || requestedPlayers.length !== 1) {
+      toast({ title: "Error", description: "Only 1-for-1 player trades are allowed", variant: "destructive" })
       return false
     }
 
-    // Verify all requested players belong to target team
-    const invalidRequested = requestedPlayers.some(pid => {
-      const player = getPlayerById(pid)
-      return !player || player.currentTeam !== proposedTo
-    })
+    console.log('🔄 Proposing trade - verifying with database')
 
-    if (invalidRequested) {
-      toast({ title: "Error", description: "Invalid player selection from target team", variant: "destructive" })
+    try {
+      // Verify players from database
+      const dbPlayersResponse = await fetch('/api/players')
+      const dbPlayers = await dbPlayersResponse.json()
+
+      // Verify all offered players belong to proposing team
+      const invalidOffered = offeredPlayers.some(pid => {
+        const player = dbPlayers.find((p: any) => p.id === pid)
+        return !player || player.currentTeam !== proposedBy
+      })
+
+      if (invalidOffered) {
+        toast({ title: "Error", description: "You can only trade your own players", variant: "destructive" })
+        return false
+      }
+
+      // Verify all requested players belong to target team
+      const invalidRequested = requestedPlayers.some(pid => {
+        const player = dbPlayers.find((p: any) => p.id === pid)
+        return !player || player.currentTeam !== proposedTo
+      })
+
+      if (invalidRequested) {
+        toast({ title: "Error", description: "Invalid player selection from target team", variant: "destructive" })
+        return false
+      }
+
+      // Get player names
+      const offeredPlayerNames = offeredPlayers.map(pid => {
+        const player = dbPlayers.find((p: any) => p.id === pid)
+        return player?.name || 'Unknown'
+      })
+
+      const requestedPlayerNames = requestedPlayers.map(pid => {
+        const player = dbPlayers.find((p: any) => p.id === pid)
+        return player?.name || 'Unknown'
+      })
+
+      const trade: Trade = {
+        id: `trade-${Date.now()}`,
+        proposedBy,
+        proposedByName: proposingTeam.franchiseName || proposingTeam.groupName,
+        proposedTo,
+        proposedToName: targetTeam.franchiseName || targetTeam.groupName,
+        offeredPlayers,
+        offeredPlayerNames,
+        requestedPlayers,
+        requestedPlayerNames,
+        status: "Pending",
+        proposedAt: new Date(),
+        message
+      }
+
+      // Save to database
+      const response = await fetch('/api/trades', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(trade),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save trade to database')
+      }
+
+      const savedTrade = await response.json()
+      console.log('✅ Trade proposed - Database updated:', savedTrade)
+
+      setTrades(prev => [...prev, savedTrade])
+
+      // Broadcast update
+      await broadcastUpdate()
+
+      toast({
+        title: "Trade Proposed",
+        description: `Trade offer sent to ${trade.proposedToName}`
+      })
+
+      return true
+    } catch (error) {
+      console.error('❌ Error proposing trade:', error)
+      toast({ title: "Error", description: "Failed to propose trade", variant: "destructive" })
       return false
     }
-
-    const trade: Trade = {
-      id: `trade-${Date.now()}`,
-      proposedBy,
-      proposedByName: proposingTeam.franchiseName || proposingTeam.groupName,
-      proposedTo,
-      proposedToName: targetTeam.franchiseName || targetTeam.groupName,
-      offeredPlayers,
-      requestedPlayers,
-      status: "Pending",
-      proposedAt: new Date(),
-      message
-    }
-
-    setTrades(prev => [...prev, trade])
-    toast({
-      title: "Trade Proposed",
-      description: `Trade offer sent to ${trade.proposedToName}`
-    })
-
-    return true
-  }, [settings, getTeamById, getPlayerById, toast])
+  }, [settings, getTeamById, getPlayerById, toast, broadcastUpdate])
 
   // Trading Window: Respond to trade (accept/reject)
-  const respondToTrade = useCallback((tradeId: string, accept: boolean) => {
+  const respondToTrade = useCallback(async (tradeId: string, accept: boolean) => {
     const trade = trades.find(t => t.id === tradeId)
 
     if (!trade) {
@@ -710,36 +1111,157 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       return false
     }
 
-    if (accept) {
-      // Move to pending admin approval instead of completing trade immediately
-      setTrades(prev => prev.map(t =>
-        t.id === tradeId
-          ? { ...t, status: "Pending Admin Approval", respondedAt: new Date() }
-          : t
-      ))
+    console.log('🔄 Responding to trade - updating database')
 
-      toast({
-        title: "Trade Accepted!",
-        description: "Waiting for admin approval to complete the trade"
-      })
-    } else {
-      setTrades(prev => prev.map(t =>
-        t.id === tradeId
-          ? { ...t, status: "Rejected", respondedAt: new Date() }
-          : t
-      ))
+    try {
+      // Verify trade exists in database
+      const [dbTradesResponse, dbPlayersResponse, dbTeamsResponse] = await Promise.all([
+        fetch('/api/trades'),
+        fetch('/api/players'),
+        fetch('/api/teams')
+      ])
 
-      toast({
-        title: "Trade Rejected",
-        description: "Trade offer declined"
-      })
+      const dbTrades = await dbTradesResponse.json()
+      const dbPlayers = await dbPlayersResponse.json()
+      const dbTeams = await dbTeamsResponse.json()
+
+      const dbTrade = dbTrades.find((t: any) => t.id === tradeId)
+
+      if (!dbTrade || dbTrade.status !== 'Pending') {
+        toast({ title: "Error", description: "Trade status changed", variant: "destructive" })
+        return false
+      }
+
+      if (accept) {
+        // Execute the trade immediately - swap players between teams
+        const playerUpdates = dbPlayers.map((p: any) => {
+          if (trade.offeredPlayers.includes(p.id)) {
+            return fetch('/api/players', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...p, currentTeam: trade.proposedTo }),
+            })
+          }
+          if (trade.requestedPlayers.includes(p.id)) {
+            return fetch('/api/players', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...p, currentTeam: trade.proposedBy }),
+            })
+          }
+          return null
+        }).filter(Boolean)
+
+        // Update team squads
+        const proposingTeam = dbTeams.find((t: any) => t.id === trade.proposedBy)
+        const targetTeam = dbTeams.find((t: any) => t.id === trade.proposedTo)
+
+        const teamUpdates = [
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...proposingTeam,
+              squadPlayerIds: [
+                ...(proposingTeam.squadPlayerIds || []).filter((pid: string) => !trade.offeredPlayers.includes(pid)),
+                ...trade.requestedPlayers
+              ]
+            }),
+          }),
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...targetTeam,
+              squadPlayerIds: [
+                ...(targetTeam.squadPlayerIds || []).filter((pid: string) => !trade.requestedPlayers.includes(pid)),
+                ...trade.offeredPlayers
+              ]
+            }),
+          })
+        ]
+
+        await Promise.all([...playerUpdates, ...teamUpdates])
+
+        // Update trade status to Accepted
+        const updatedTrade = {
+          ...dbTrade,
+          status: "Accepted",
+          respondedAt: new Date(),
+        }
+
+        const response = await fetch('/api/trades', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTrade),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update trade in database')
+        }
+
+        const savedTrade = await response.json()
+        console.log('✅ Trade completed - Database updated:', savedTrade)
+
+        // Refresh all data from database
+        const [newPlayers, newTeams] = await Promise.all([
+          fetch('/api/players').then(r => r.json()),
+          fetch('/api/teams').then(r => r.json())
+        ])
+
+        setPlayers(newPlayers)
+        setTeams(newTeams)
+        setTrades(prev => prev.map(t => t.id === tradeId ? savedTrade : t))
+
+        // Broadcast update
+        await broadcastUpdate()
+
+        toast({
+          title: "Trade Completed!",
+          description: `Players exchanged between ${trade.proposedByName} and ${trade.proposedToName}`
+        })
+      } else {
+        // Reject the trade
+        const updatedTrade = {
+          ...dbTrade,
+          status: "Rejected",
+          respondedAt: new Date(),
+        }
+
+        const response = await fetch('/api/trades', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTrade),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update trade in database')
+        }
+
+        const savedTrade = await response.json()
+        console.log('✅ Trade rejected - Database updated:', savedTrade)
+
+        setTrades(prev => prev.map(t => t.id === tradeId ? savedTrade : t))
+
+        // Broadcast update
+        await broadcastUpdate()
+
+        toast({
+          title: "Trade Rejected",
+          description: "Trade offer declined"
+        })
+      }
+
+      return true
+    } catch (error) {
+      console.error('❌ Error responding to trade:', error)
+      toast({ title: "Error", description: "Failed to respond to trade", variant: "destructive" })
+      return false
     }
-
-    return true
-  }, [trades, settings, toast])
+  }, [trades, settings, toast, broadcastUpdate])
 
   // Trading Window: Cancel trade
-  const cancelTrade = useCallback((tradeId: string, teamId: string) => {
+  const cancelTrade = useCallback(async (tradeId: string, teamId: string) => {
     const trade = trades.find(t => t.id === tradeId)
 
     if (!trade) {
@@ -757,18 +1279,55 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       return false
     }
 
-    setTrades(prev => prev.map(t =>
-      t.id === tradeId
-        ? { ...t, status: "Cancelled", respondedAt: new Date() }
-        : t
-    ))
+    console.log('🔄 Cancelling trade - updating database')
 
-    toast({ title: "Trade Cancelled", description: "Trade offer withdrawn" })
-    return true
-  }, [trades, toast])
+    try {
+      // Verify from database
+      const dbTradesResponse = await fetch('/api/trades')
+      const dbTrades = await dbTradesResponse.json()
+      const dbTrade = dbTrades.find((t: any) => t.id === tradeId)
+
+      if (!dbTrade || dbTrade.status !== 'Pending') {
+        toast({ title: "Error", description: "Trade status changed", variant: "destructive" })
+        return false
+      }
+
+      const updatedTrade = {
+        ...dbTrade,
+        status: "Cancelled",
+        respondedAt: new Date(),
+      }
+
+      // Update in database
+      const response = await fetch('/api/trades', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTrade),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel trade in database')
+      }
+
+      const savedTrade = await response.json()
+      console.log('✅ Trade cancelled - Database updated:', savedTrade)
+
+      setTrades(prev => prev.map(t => t.id === tradeId ? savedTrade : t))
+
+      // Broadcast update
+      await broadcastUpdate()
+
+      toast({ title: "Trade Cancelled", description: "Trade offer withdrawn" })
+      return true
+    } catch (error) {
+      console.error('❌ Error cancelling trade:', error)
+      toast({ title: "Error", description: "Failed to cancel trade", variant: "destructive" })
+      return false
+    }
+  }, [trades, toast, broadcastUpdate])
 
   // Trading Window: Admin approve/reject trade
-  const approveTrade = useCallback((tradeId: string, approve: boolean) => {
+  const approveTrade = useCallback(async (tradeId: string, approve: boolean) => {
     const trade = trades.find(t => t.id === tradeId)
 
     if (!trade) {
@@ -781,60 +1340,125 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       return false
     }
 
-    if (approve) {
-      // Execute the trade - swap players between teams
-      setPlayers(prev => prev.map(p => {
-        if (trade.offeredPlayers.includes(p.id)) {
-          return { ...p, currentTeam: trade.proposedTo }
-        }
-        if (trade.requestedPlayers.includes(p.id)) {
-          return { ...p, currentTeam: trade.proposedBy }
-        }
-        return p
-      }))
+    console.log('🔄 Approving trade - updating database')
 
-      // Update team squads
-      setTeams(prev => prev.map(t => {
-        if (t.id === trade.proposedBy) {
-          return {
-            ...t,
-            squadPlayerIds: [
-              ...t.squadPlayerIds.filter(pid => !trade.offeredPlayers.includes(pid)),
-              ...trade.requestedPlayers
-            ]
-          }
-        }
-        if (t.id === trade.proposedTo) {
-          return {
-            ...t,
-            squadPlayerIds: [
-              ...t.squadPlayerIds.filter(pid => !trade.requestedPlayers.includes(pid)),
-              ...trade.offeredPlayers
-            ]
-          }
-        }
-        return t
-      }))
+    try {
+      // Verify from database
+      const [dbPlayersResponse, dbTeamsResponse, dbTradesResponse] = await Promise.all([
+        fetch('/api/players'),
+        fetch('/api/teams'),
+        fetch('/api/trades')
+      ])
 
-      toast({
-        title: "Trade Approved!",
-        description: `Players exchanged between ${trade.proposedByName} and ${trade.proposedToName}`
+      const dbPlayers = await dbPlayersResponse.json()
+      const dbTeams = await dbTeamsResponse.json()
+      const dbTrades = await dbTradesResponse.json()
+
+      const dbTrade = dbTrades.find((t: any) => t.id === tradeId)
+
+      if (!dbTrade || dbTrade.status !== 'Pending Admin Approval') {
+        toast({ title: "Error", description: "Trade status changed", variant: "destructive" })
+        return false
+      }
+
+      if (approve) {
+        // Execute the trade - swap players between teams
+        const playerUpdates = dbPlayers.map((p: any) => {
+          if (trade.offeredPlayers.includes(p.id)) {
+            return fetch('/api/players', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...p, currentTeam: trade.proposedTo }),
+            })
+          }
+          if (trade.requestedPlayers.includes(p.id)) {
+            return fetch('/api/players', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...p, currentTeam: trade.proposedBy }),
+            })
+          }
+          return null
+        }).filter(Boolean)
+
+        // Update team squads
+        const proposingTeam = dbTeams.find((t: any) => t.id === trade.proposedBy)
+        const targetTeam = dbTeams.find((t: any) => t.id === trade.proposedTo)
+
+        const teamUpdates = [
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...proposingTeam,
+              squadPlayerIds: [
+                ...(proposingTeam.squadPlayerIds || []).filter((pid: string) => !trade.offeredPlayers.includes(pid)),
+                ...trade.requestedPlayers
+              ]
+            }),
+          }),
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              ...targetTeam,
+              squadPlayerIds: [
+                ...(targetTeam.squadPlayerIds || []).filter((pid: string) => !trade.requestedPlayers.includes(pid)),
+                ...trade.offeredPlayers
+              ]
+            }),
+          })
+        ]
+
+        await Promise.all([...playerUpdates, ...teamUpdates])
+
+        toast({
+          title: "Trade Approved!",
+          description: `Players exchanged between ${trade.proposedByName} and ${trade.proposedToName}`
+        })
+      } else {
+        toast({
+          title: "Trade Rejected",
+          description: "Admin rejected the trade"
+        })
+      }
+
+      // Update trade status in database
+      const updatedTrade = {
+        ...dbTrade,
+        status: approve ? "Accepted" : "Rejected",
+        respondedAt: new Date(),
+      }
+
+      const tradeResponse = await fetch('/api/trades', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTrade),
       })
-    } else {
-      toast({
-        title: "Trade Rejected",
-        description: "Admin rejected the trade"
-      })
+
+      const savedTrade = await tradeResponse.json()
+      console.log('✅ Trade approval completed - Database updated')
+
+      // Refresh all data from database
+      const [newPlayers, newTeams] = await Promise.all([
+        fetch('/api/players').then(r => r.json()),
+        fetch('/api/teams').then(r => r.json())
+      ])
+
+      setPlayers(newPlayers)
+      setTeams(newTeams)
+      setTrades(prev => prev.map(t => t.id === tradeId ? savedTrade : t))
+
+      // Broadcast update
+      await broadcastUpdate()
+
+      return true
+    } catch (error) {
+      console.error('❌ Error approving trade:', error)
+      toast({ title: "Error", description: "Failed to approve trade", variant: "destructive" })
+      return false
     }
-
-    setTrades(prev => prev.map(t =>
-      t.id === tradeId
-        ? { ...t, status: approve ? "Accepted" : "Rejected", respondedAt: new Date() }
-        : t
-    ))
-
-    return true
-  }, [trades, toast])
+  }, [trades, toast, broadcastUpdate])
 
   return (
     <AuctionContext.Provider

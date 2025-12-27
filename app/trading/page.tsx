@@ -463,24 +463,65 @@ export default function TradingPage() {
               ) : (
                 <div className="space-y-3">
                   {completedTrades.map(trade => (
-                    <div key={trade.id} className="flex items-center justify-between p-3 rounded-lg border">
-                      <div className="flex-1">
+                    <div key={trade.id} className="flex flex-col gap-2 p-4 rounded-lg border">
+                      <div className="flex items-center justify-between">
                         <div className="font-medium">
                           {trade.proposedByName} ↔ {trade.proposedToName}
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {trade.offeredPlayers.length} for {trade.requestedPlayers.length} players
+                        <Badge
+                          variant={
+                            trade.status === "Accepted" ? "default" :
+                            trade.status === "Rejected" ? "destructive" :
+                            "secondary"
+                          }
+                        >
+                          {trade.status}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="flex-1">
+                          <div className="text-muted-foreground mb-1">Offered:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {trade.offeredPlayerNames?.map((name, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {name}
+                              </Badge>
+                            )) || trade.offeredPlayers.map((pid, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {players.find(p => p.id === pid)?.name || 'Unknown'}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <ArrowLeftRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                        
+                        <div className="flex-1">
+                          <div className="text-muted-foreground mb-1">Requested:</div>
+                          <div className="flex flex-wrap gap-1">
+                            {trade.requestedPlayerNames?.map((name, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {name}
+                              </Badge>
+                            )) || trade.requestedPlayers.map((pid, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {players.find(p => p.id === pid)?.name || 'Unknown'}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
                       </div>
-                      <Badge
-                        variant={
-                          trade.status === "Accepted" ? "default" :
-                          trade.status === "Rejected" ? "destructive" :
-                          "secondary"
-                        }
-                      >
-                        {trade.status}
-                      </Badge>
+                      
+                      {trade.message && (
+                        <div className="text-xs text-muted-foreground italic">
+                          Message: {trade.message}
+                        </div>
+                      )}
+                      
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(trade.proposedAt).toLocaleString()}
+                      </div>
                     </div>
                   ))}
                 </div>
