@@ -4,6 +4,9 @@ import Team from '@/lib/models/Team'
 import Player from '@/lib/models/Player'
 import Settings from '@/lib/models/Settings'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 /**
  * Health check endpoint to verify database connection and data status
  * Use this to diagnose deployment issues

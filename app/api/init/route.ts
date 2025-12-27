@@ -7,6 +7,9 @@ import Transaction from '@/lib/models/Transaction'
 import Trade from '@/lib/models/Trade'
 import { mockTeams, mockPlayers, defaultSettings } from '@/lib/mock-data'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 /**
  * Initialize database with mock data
  * This endpoint should only be used for initial setup or testing
