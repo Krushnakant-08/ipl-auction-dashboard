@@ -135,7 +135,7 @@ Franchise users see:
 - **Dashboard**: Only their team's stats and players
 - **Players Page**: All players, but prices/teams masked except their own
 - **Squads Page**: Only their squad (no tabs for other teams)
-
+     
 ## Security Notes
 
 ⚠️ **Important**: This is a demo authentication system suitable for:
