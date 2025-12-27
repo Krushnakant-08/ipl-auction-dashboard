@@ -75,7 +75,12 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ipl-auction?retr
 
 # For local MongoDB:
 # MONGODB_URI=mongodb://localhost:27017/ipl-auction
+
+# Password required to clear database (security measure)
+CLEAR_DB_PASSWORD=cleardb123
 ```
+
+**Important:** Change `CLEAR_DB_PASSWORD` to a secure password for production deployments!
 
 ### Step 4: Initialize the Database
 
@@ -226,13 +231,20 @@ Response:
 
 ### Reset Database
 
+**Note:** Clearing the database now requires a password for security.
+
 ```bash
-# Clear all data
-curl -X DELETE http://localhost:3000/api/init
+# Clear all data (will prompt for password in UI)
+# Or use API directly with password:
+curl -X DELETE http://localhost:3000/api/init \
+  -H "Content-Type: application/json" \
+  -d '{"password":"cleardb123"}'
 
 # Re-initialize
 curl -X POST http://localhost:3000/api/init
 ```
+
+**Security:** The `CLEAR_DB_PASSWORD` is set in your `.env.local` file. Change it to a secure password for production!
 
 ### Verify Teams
 
