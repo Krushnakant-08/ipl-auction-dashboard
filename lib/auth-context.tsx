@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation"
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
+  isLoading: boolean
   login: (role: UserRole, teamId?: string, password?: string) => { success: boolean; error?: string }
   logout: () => void
   isAdmin: () => boolean
@@ -40,6 +41,7 @@ const PUBLIC_ROUTES = ["/login"]
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
 
@@ -47,14 +49,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedUser = localStorage.getItem("ipl-auction-user")
     if (storedUser) {
-      setUser(JSON.parse(storedUser))
+      try {
+        setUser(JSON.parse(storedUser))
+      } catch (error) {
+        console.error('Failed to parse stored user:', error)
+        localStorage.removeItem("ipl-auction-user")
+      }
     }
+    setIsLoading(false)
   }, [])
 
   // Check route access whenever pathname changes
   useEffect(() => {
-    // Skip if still loading user
-    if (typeof window === "undefined") return
+    // Skip if still loading user or SSR
+    if (typeof window === "undefined" || isLoading) return
 
     if (!user && !PUBLIC_ROUTES.includes(pathname) && pathname !== "/login") {
       router.push("/login")
@@ -63,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else if (user && user.role === "franchise" && ADMIN_ONLY_ROUTES.includes(pathname)) {
       router.push("/")
     }
-  }, [user, pathname, router])
+  }, [user, pathname, router, isLoading])
 
   const login = useCallback(
     (role: UserRole, teamId?: string, password?: string) => {
@@ -140,6 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         isAuthenticated: !!user,
+        isLoading,
         login,
         logout,
         isAdmin,
@@ -147,7 +156,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         canAccessRoute,
       }}
     >
-      {children}
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   )
 }
