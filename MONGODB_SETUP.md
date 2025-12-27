@@ -18,25 +18,25 @@ Your IPL Auction Dashboard now uses **MongoDB** instead of localStorage! All auc
 1. In MongoDB Atlas, click **"Connect"** on your cluster
 2. Choose **"Connect your application"**
 3. Copy the connection string (it looks like this):
-   ```
+   \`\`\`
    mongodb+srv://username:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
-   ```
+   \`\`\`
 4. Replace `<password>` with your actual database password
 5. Add the database name after `.net/`: `ipl-auction`
 
    Final format:
-   ```
+   \`\`\`
    mongodb+srv://username:yourpassword@cluster0.xxxxx.mongodb.net/ipl-auction?retryWrites=true&w=majority
-   ```
+   \`\`\`
 
 ### 3. Configure Your Environment
 
 1. Open `.env.local` in your project root
 2. Replace the `MONGODB_URI` value with your connection string:
-   ```env
+   \`\`\`env
    MONGODB_URI=mongodb+srv://your-actual-connection-string
    NEXT_PUBLIC_API_URL=http://localhost:3000
-   ```
+   \`\`\`
 
 ### 4. Whitelist Your IP Address
 
@@ -100,9 +100,9 @@ When deploying to Vercel:
 ## 🧪 Testing
 
 1. **Start the development server:**
-   ```bash
+   \`\`\`bash
    npm run dev
-   ```
+   \`\`\`
 
 2. **Check MongoDB connection:**
    - Look for "✅ MongoDB connected successfully" in the console

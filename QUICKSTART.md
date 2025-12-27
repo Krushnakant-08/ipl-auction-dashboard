@@ -11,9 +11,9 @@
 ## 2️⃣ Configure Environment (30 seconds)
 
 Edit `.env.local`:
-```env
+\`\`\`env
 MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ipl-auction?retryWrites=true&w=majority
-```
+\`\`\`
 
 Replace:
 - `username` → your MongoDB username
@@ -28,9 +28,9 @@ In MongoDB Atlas:
 
 ## 4️⃣ Start & Initialize (1 minute)
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 Visit: http://localhost:3000/settings
 
@@ -44,7 +44,7 @@ Your app now uses MongoDB. All data persists and syncs across devices!
 
 ## 🔥 Quick Commands
 
-```bash
+\`\`\`bash
 # Install dependencies
 npm install
 
@@ -57,7 +57,7 @@ npm start
 
 # Test MongoDB connection
 # Visit: http://localhost:3000/api/teams
-```
+\`\`\`
 
 ---
 

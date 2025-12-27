@@ -48,12 +48,12 @@ Your IPL Auction Dashboard has been successfully migrated from **localStorage/in
 
 ## 🔧 Dependencies Added
 
-```json
+\`\`\`json
 {
   "mongodb": "^6.x",
   "mongoose": "^8.x"
 }
-```
+\`\`\`
 
 ---
 
@@ -65,9 +65,9 @@ Your IPL Auction Dashboard has been successfully migrated from **localStorage/in
 2. **Create Cluster**: Choose free M0 tier
 3. **Get Connection String**: Click "Connect" → "Connect your application"
 4. **Update .env.local**:
-   ```env
+   \`\`\`env
    MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/ipl-auction?retryWrites=true&w=majority
-   ```
+   \`\`\`
 
 ### 2. Configure Network Access
 
@@ -93,19 +93,19 @@ Your IPL Auction Dashboard has been successfully migrated from **localStorage/in
 4. Click "Initialize Database"
 
 **Option B: Via API Call**
-```bash
+\`\`\`bash
 # Using curl
 curl -X POST http://localhost:3000/api/init
 
 # Or visit in browser
 http://localhost:3000/api/init (POST request)
-```
+\`\`\`
 
 ### 5. Test Local Development
 
-```bash
+\`\`\`bash
 npm run dev
-```
+\`\`\`
 
 Visit http://localhost:3000 and verify:
 - Data loads from MongoDB
@@ -126,7 +126,7 @@ Visit http://localhost:3000 and verify:
 
 ### Data Flow
 
-```
+\`\`\`
 User Action (Browser)
     ↓
 React Component
@@ -144,7 +144,7 @@ MongoDB Atlas (Cloud Database)
 WebSocket broadcasts to all clients
     ↓
 All devices update in real-time
-```
+\`\`\`
 
 ### Real-time Synchronization
 
