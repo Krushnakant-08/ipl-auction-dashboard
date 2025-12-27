@@ -57,27 +57,8 @@ export async function POST(request: NextRequest) {
           Team.findOneAndUpdate({ id: team.id }, team, { upsert: true, new: true })
         )
       )
-  try {
-    await connectDB()
+    }
     
-    await Promise.all([
-      Team.deleteMany({}),
-      Player.deleteMany({}),
-      Settings.deleteMany({}),
-      Transaction.deleteMany({}),
-      Trade.deleteMany({}),
-    ])
-    
-    console.log('✅ Auction state cleared from database')
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error('❌ Error clearing auction data:', error)
-    return NextResponse.json(
-      { error: 'Failed to clear auction data' },
-      { status: 500 }
-    )
-  }
-}
     // Update players
     if (data.players && Array.isArray(data.players)) {
       await Promise.all(
