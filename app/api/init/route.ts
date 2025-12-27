@@ -72,9 +72,37 @@ export async function POST(request: NextRequest) {
 /**
  * Clear all data from database
  * WARNING: This will delete all auction data!
+ * Requires admin password for security
  */
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   try {
+    // Check for admin password
+    const CLEAR_DB_PASSWORD = process.env.CLEAR_DB_PASSWORD || 'cleardb123'
+    
+    const body = await request.json()
+    const { password } = body
+    
+    if (!password) {
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Password is required to clear database' 
+        },
+        { status: 401 }
+      )
+    }
+    
+    if (password !== CLEAR_DB_PASSWORD) {
+      console.warn('⚠️ Failed attempt to clear database with incorrect password')
+      return NextResponse.json(
+        { 
+          success: false,
+          error: 'Incorrect password' 
+        },
+        { status: 401 }
+      )
+    }
+    
     await connectDB()
     
     await Promise.all([
@@ -85,7 +113,7 @@ export async function DELETE() {
       Trade.deleteMany({}),
     ])
     
-    console.log('✅ Database cleared')
+    console.log('✅ Database cleared successfully')
     
     return NextResponse.json({
       success: true,
@@ -94,7 +122,10 @@ export async function DELETE() {
   } catch (error) {
     console.error('❌ Error clearing database:', error)
     return NextResponse.json(
-      { error: 'Failed to clear database' },
+      { 
+        success: false,
+        error: 'Failed to clear database' 
+      },
       { status: 500 }
     )
   }
