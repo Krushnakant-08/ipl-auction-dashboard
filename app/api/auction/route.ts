@@ -6,6 +6,9 @@ import Settings from '@/lib/models/Settings'
 import Transaction from '@/lib/models/Transaction'
 import Trade from '@/lib/models/Trade'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     await connectDB()
