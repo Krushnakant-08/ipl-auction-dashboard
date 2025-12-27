@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 import { useAuction } from "@/lib/auction-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Trophy, Shield, Building2, Lock, AlertCircle } from "lucide-react"
+import { Trophy, Shield, Building2, Lock, AlertCircle, RefreshCw } from "lucide-react"
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -18,8 +18,25 @@ export default function LoginPage() {
   const [adminPassword, setAdminPassword] = useState<string>("")
   const [franchisePassword, setFranchisePassword] = useState<string>("")
   const [error, setError] = useState<string>("")
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
-  const completedTeams = teams.filter((t) => t.teamAuctionComplete && t.franchiseName)
+  // Show only teams that have been assigned a franchise
+  const availableTeams = teams.filter((t) => t.franchiseName)
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      // Force reload by clearing cache and reloading page
+      await fetch('/api/teams', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' }
+      })
+      window.location.reload()
+    } catch (error) {
+      console.error('Failed to refresh:', error)
+      setIsRefreshing(false)
+    }
+  }
 
   const handleAdminLogin = () => {
     setError("")
@@ -175,20 +192,37 @@ export default function LoginPage() {
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="franchise-select">Select Your Franchise</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="franchise-select">Select Your Franchise</Label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={handleRefresh}
+                      disabled={isRefreshing}
+                      className="h-8"
+                    >
+                      <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </Button>
+                  </div>
+                  {teams.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {teams.length} total teams, {availableTeams.length} with franchises
+                    </p>
+                  )}
                   <Select value={selectedTeamId} onValueChange={setSelectedTeamId}>
                     <SelectTrigger id="franchise-select">
                       <SelectValue placeholder="Choose your team..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {completedTeams.length === 0 ? (
+                      {availableTeams.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
-                          No franchises available yet
+                          No franchises assigned yet
                           <br />
-                          <span className="text-xs">Complete team auction first</span>
+                          <span className="text-xs">Complete team auction to assign franchises</span>
                         </div>
                       ) : (
-                        completedTeams.map((team) => (
+                        availableTeams.map((team) => (
                           <SelectItem key={team.id} value={team.id}>
                             <div className="flex items-center gap-2">
                               <Building2 className="h-4 w-4" />
