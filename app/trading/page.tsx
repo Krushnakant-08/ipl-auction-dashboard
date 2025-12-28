@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { RefreshCw, ArrowLeftRight, Clock, Check, X, AlertCircle } from "lucide-react"
+import { RefreshCw, ArrowLeftRight, Clock, Check, X, AlertCircle, StopCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function TradingPage() {
@@ -26,6 +26,7 @@ export default function TradingPage() {
     cancelTrade,
     approveTrade,
     startTradingWindow,
+    endTradingWindow,
   } = useAuction()
 
   const [durationMinutes, setDurationMinutes] = useState("30")
@@ -77,10 +78,14 @@ export default function TradingPage() {
     }
   }
 
-  const handleProposeTrade = () => {
+  const handleEndTradingWindow = () => {
+    endTradingWindow()
+  }
+
+  const handleProposeTrade = async () => {
     if (!userTeam || !selectedTeam) return
     
-    const success = proposeTrade(
+    const success = await proposeTrade(
       userTeam.id,
       selectedTeam,
       offeredPlayers,
@@ -136,31 +141,54 @@ export default function TradingPage() {
         </div>
 
         {/* Admin Control */}
-        {isAdmin() && !isTradingActive && (
-          <Card className="mb-6 border-primary">
-            <CardHeader className="bg-primary/5">
-              <CardTitle>Start Trading Window</CardTitle>
-              <CardDescription>Open the trading window for a specific duration</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="flex gap-4 items-end">
-                <div className="flex-1">
-                  <Label>Duration (minutes)</Label>
-                  <Input
-                    type="number"
-                    min="5"
-                    step="5"
-                    value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(e.target.value)}
-                  />
-                </div>
-                <Button onClick={handleStartTradingWindow} size="lg">
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Open Trading Window
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+        {isAdmin() && (
+          <>
+            {!isTradingActive ? (
+              <Card className="mb-6 border-primary">
+                <CardHeader className="bg-primary/5">
+                  <CardTitle>Start Trading Window</CardTitle>
+                  <CardDescription>Open the trading window for a specific duration</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="flex gap-4 items-end">
+                    <div className="flex-1">
+                      <Label>Duration (minutes)</Label>
+                      <Input
+                        type="number"
+                        min="5"
+                        step="5"
+                        value={durationMinutes}
+                        onChange={(e) => setDurationMinutes(e.target.value)}
+                      />
+                    </div>
+                    <Button onClick={handleStartTradingWindow} size="lg">
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Open Trading Window
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="mb-6 border-destructive">
+                <CardHeader className="bg-destructive/5">
+                  <CardTitle>Trading Window Active</CardTitle>
+                  <CardDescription>Close the trading window manually</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-muted-foreground mb-1">Time Remaining</div>
+                      <div className="text-2xl font-bold">{timeRemaining}</div>
+                    </div>
+                    <Button onClick={handleEndTradingWindow} variant="destructive" size="lg">
+                      <StopCircle className="h-4 w-4 mr-2" />
+                      End Trading Window
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </>
         )}
 
         {!isTradingActive && (
