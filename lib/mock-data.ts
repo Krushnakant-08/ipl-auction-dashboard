@@ -133,7 +133,7 @@ export const mockPlayers: Player[] = [
   // Star Batsmen (High ratings)
   {
     id: "p1",
-    name: "Virat Sharma",
+    name: "Virat Kohli",
     role: "Batsman",
     basePrice: 2.0,
     country: "India",

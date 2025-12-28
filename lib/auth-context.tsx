@@ -50,7 +50,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const storedUser = localStorage.getItem("ipl-auction-user")
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser))
+        const parsedUser = JSON.parse(storedUser)
+        setUser(parsedUser)
       } catch (error) {
         console.error('Failed to parse stored user:', error)
         localStorage.removeItem("ipl-auction-user")
@@ -64,8 +65,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Skip if still loading user or SSR
     if (typeof window === "undefined" || isLoading) return
 
+    // Only redirect if user is actually not found and we're not on login
     if (!user && !PUBLIC_ROUTES.includes(pathname) && pathname !== "/login") {
-      router.push("/login")
+      // Double-check localStorage before redirecting
+      const storedUser = localStorage.getItem("ipl-auction-user")
+      if (!storedUser) {
+        router.push("/login")
+      }
     } else if (user && pathname === "/login") {
       router.push("/")
     } else if (user && user.role === "franchise" && ADMIN_ONLY_ROUTES.includes(pathname)) {
