@@ -184,7 +184,6 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         freshTransactions = preFetchedData.transactions
         freshTrades = preFetchedData.trades
         freshSettings = preFetchedData.settings
-        console.log('📦 Using pre-fetched data for broadcast')
       } else {
         // Fetch only what's missing
         const fetchPromises: Promise<Response>[] = []
@@ -235,8 +234,6 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           trades: freshTrades,
         }),
       })
-
-      console.log('📡 Broadcast update sent:', { phase: freshSettings.currentPhase })
     } catch (error) {
       console.error('Failed to broadcast update:', error)
     }
@@ -527,35 +524,40 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return false
       }
 
-      console.log('💰 Processing player sale - verifying with database')
-      
       try {
-        // Verify team budget from database with cache-busting
+        // Fetch teams and players in parallel for faster verification
         const timestamp = Date.now()
-        const dbTeamResponse = await fetch(`/api/teams?t=${timestamp}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-          },
-        })
+        const [dbTeamResponse, dbPlayerResponse] = await Promise.all([
+          fetch(`/api/teams?t=${timestamp}`, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+            },
+          }),
+          fetch(`/api/players?t=${timestamp}`, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+            },
+          })
+        ])
         
-        if (!dbTeamResponse.ok) {
-          console.error('❌ Failed to fetch teams from database:', dbTeamResponse.statusText)
+        if (!dbTeamResponse.ok || !dbPlayerResponse.ok) {
           toast({ 
             title: "Database Error", 
-            description: "Failed to connect to database. Please check your connection.", 
+            description: "Failed to connect to database", 
             variant: "destructive" 
           })
           return false
         }
         
-        const dbTeams = await dbTeamResponse.json()
-        console.log(`📊 Fetched ${dbTeams.length} teams from database for player auction`)
+        const [dbTeams, dbPlayers] = await Promise.all([
+          dbTeamResponse.json(),
+          dbPlayerResponse.json()
+        ])
         
         if (!Array.isArray(dbTeams) || dbTeams.length === 0) {
-          console.error('❌ No teams found in database')
-          console.error('💡 Database may not be initialized. Visit /api/health to check status')
           toast({ 
             title: "Database Not Initialized", 
             description: "No teams found. Please initialize the database first.", 
@@ -567,25 +569,14 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         const dbTeam = dbTeams.find((t: any) => t.id === teamId)
         
         if (!dbTeam) {
-          console.error(`❌ Team ${teamId} not found in database`)
-          console.error('Available team IDs:', dbTeams.map((t: any) => t.id).join(', '))
-          console.error('Looking for teamId:', teamId)
           toast({ 
             title: "Team Not Found", 
-            description: `Team ${teamId} not found. Check console for details.`, 
+            description: `Team ${teamId} not found in database.`, 
             variant: "destructive" 
           })
           return false
         }
 
-        // Verify player status from database with cache-busting
-        const dbPlayerResponse = await fetch(`/api/players?t=${timestamp}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-          },
-        })
-        const dbPlayers = await dbPlayerResponse.json()
         const dbPlayer = dbPlayers.find((p: any) => p.id === playerId)
         
         if (!dbPlayer) {
@@ -612,41 +603,33 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         const newRemainingBudget = dbTeam.remainingBudget - price
         const newSquadPlayerIds = [...(dbTeam.squadPlayerIds || []), playerId]
 
-        // Update player in database
-        const updatedPlayer = {
-          ...dbPlayer,
-          status: 'Sold',
-          currentTeam: teamId,
-          purchasePrice: price,
-          originalTeam: teamId,
+        // Update player and team in database in parallel
+        const [playerUpdateResponse, teamUpdateResponse] = await Promise.all([
+          fetch('/api/players', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedPlayer),
+          }),
+          fetch('/api/teams', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedTeam),
+          })
+        ])
+
+        if (!playerUpdateResponse.ok || !teamUpdateResponse.ok) {
+          throw new Error('Failed to update player or team in database')
         }
 
-        const playerUpdateResponse = await fetch('/api/players', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedPlayer),
-        })
+        const [savedPlayer, savedTeam] = await Promise.all([
+          playerUpdateResponse.json(),
+          teamUpdateResponse.json()
+        ])
 
-        if (!playerUpdateResponse.ok) {
-          throw new Error('Failed to update player in database')
-        }
-
-        // Update team in database
-        const updatedTeam = {
-          ...dbTeam,
-          remainingBudget: newRemainingBudget,
-          squadPlayerIds: newSquadPlayerIds,
-        }
-
-        const teamUpdateResponse = await fetch('/api/teams', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedTeam),
-        })
-
-        if (!teamUpdateResponse.ok) {
-          throw new Error('Failed to update team in database')
-        }
+        const [savedPlayer, savedTeam] = await Promise.all([
+          playerUpdateResponse.json(),
+          teamUpdateResponse.json()
+        ])
 
         // Create transaction record
         const transaction: AuctionTransaction = {
@@ -662,49 +645,36 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           type: "sale",
         }
 
-        // Save transaction to database
-        const transactionResponse = await fetch('/api/transactions', {
+        // Save transaction asynchronously (don't wait)
+        fetch('/api/transactions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(transaction),
-        })
+        }).catch(err => console.warn('Transaction save failed:', err))
 
-        if (!transactionResponse.ok) {
-          console.warn('Failed to save transaction, but sale completed')
-        }
-
-        const savedPlayer = await playerUpdateResponse.json()
-        const savedTeam = await teamUpdateResponse.json()
-
-        console.log('✅ Player sold - Database updated:', {
-          player: savedPlayer.name,
-          team: savedTeam.franchiseName || savedTeam.groupName,
-          price,
-          newBudget: savedTeam.remainingBudget,
-        })
-
-        // Refresh all data from database to ensure state is in sync
-        const [refreshedTeams, refreshedPlayers, refreshedTransactions] = await Promise.all([
-          fetch(`/api/teams?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
-          fetch(`/api/players?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
-          fetch(`/api/transactions?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
-        ])
+        // Update players list with the saved player
+        const updatedPlayers = dbPlayers.map((p: any) => 
+          p.id === playerId ? savedPlayer : p
+        )
         
-        console.log(`🔄 Refreshed state after player sale: ${refreshedTeams.length} teams, ${refreshedPlayers.length} players`)
+        // Update teams list with the saved team
+        const updatedTeams = dbTeams.map((t: any) => 
+          t.id === teamId ? savedTeam : t
+        )
 
-        // Update local state with all refreshed data from database
-        setPlayers(refreshedPlayers)
-        setTeams(refreshedTeams)
+        // Update local state immediately with new data (no need to refetch)
+        setPlayers(updatedPlayers)
+        setTeams(updatedTeams)
         setTransactions((prev) => [...prev, transaction])
 
-        // Broadcast update to all clients with pre-fetched data to avoid redundant API calls
-        await broadcastUpdate({
-          teams: refreshedTeams,
-          players: refreshedPlayers,
-          transactions: refreshedTransactions,
+        // Broadcast update asynchronously (non-blocking)
+        broadcastUpdate({
+          teams: updatedTeams,
+          players: updatedPlayers,
+          transactions: [...transactions, transaction],
           trades: trades,
           settings: settings,
-        })
+        }).catch(err => console.error('Broadcast failed:', err))
 
         toast({
           title: "Player Sold!",
