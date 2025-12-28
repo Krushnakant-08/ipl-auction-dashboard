@@ -273,68 +273,20 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return false
       }
 
-      console.log('✅ Updating team with franchise - verifying with database')
+      console.log('✅ Assigning franchise to team')
       
       try {
-        // Verify current budget from database with cache-busting
-        const timestamp = Date.now()
-        const dbTeamResponse = await fetch(`/api/teams?t=${timestamp}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-          },
-        })
-        
-        if (!dbTeamResponse.ok) {
-          console.error('❌ Failed to fetch teams from database:', dbTeamResponse.statusText)
-          toast({ 
-            title: "Database Error", 
-            description: "Failed to connect to database. Please check your connection.", 
-            variant: "destructive" 
-          })
-          return false
-        }
-        
-        const dbTeams = await dbTeamResponse.json()
-        console.log(`📊 Fetched ${dbTeams.length} teams from database at ${new Date().toISOString()}`)
-        
-        if (!Array.isArray(dbTeams) || dbTeams.length === 0) {
-          console.error('❌ No teams found in database. Teams:', dbTeams)
-          console.error('💡 Database may not be initialized. Visit /api/health to check status')
-          toast({ 
-            title: "Database Not Initialized", 
-            description: "No teams found. Please initialize the database first.", 
-            variant: "destructive" 
-          })
-          return false
-        }
-        
-        const dbTeam = dbTeams.find((t: any) => t.id === teamId)
-        
-        if (!dbTeam) {
-          console.error(`❌ Team ${teamId} not found in database`)
-          console.error('Available team IDs:', dbTeams.map((t: any) => t.id).join(', '))
-          console.error('Looking for teamId:', teamId)
-          toast({ 
-            title: "Team Not Found", 
-            description: `Team ${teamId} not found in database. Available teams: ${dbTeams.length}`, 
-            variant: "destructive" 
-          })
-          return false
-        }
-
-        // Calculate new remaining budget based on DB data
-        const newRemainingBudget = dbTeam.remainingBudget - bidAmount
+        // Calculate new remaining budget
+        const newRemainingBudget = team.remainingBudget - bidAmount
         
         if (newRemainingBudget < 0) {
-          toast({ title: "Insufficient Budget", description: "Not enough budget in database", variant: "destructive" })
+          toast({ title: "Insufficient Budget", description: "Not enough budget available", variant: "destructive" })
           return false
         }
 
         // Update database immediately
         const updatedTeam = {
-          ...dbTeam,
+          ...team,
           franchiseName: franchise.name,
           franchiseBid: bidAmount,
           remainingBudget: newRemainingBudget,
@@ -350,7 +302,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           body: JSON.stringify(updatedTeam),
         })
 
-        console.log('📥 Update response status:', updateResponse.status, updateResponse.statusText)
+        console.log('📥 Update response status:', updateResponse.status)
 
         if (!updateResponse.ok) {
           const errorText = await updateResponse.text()
@@ -361,30 +313,15 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         const savedTeam = await updateResponse.json()
         console.log('✅ Team updated in database:', savedTeam)
 
-        // Fetch all teams again to ensure state is in sync
-        console.log('🔄 Fetching all teams to refresh state...')
-        const refreshResponse = await fetch(`/api/teams?t=${Date.now()}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-          },
-        })
-        
-        if (!refreshResponse.ok) {
-          console.error('❌ Failed to refresh teams:', refreshResponse.statusText)
-        }
-        
-        const refreshedTeams = await refreshResponse.json()
-        console.log(`🔄 Refreshed teams state: ${refreshedTeams.length} teams`)
-        console.log('Updated teams:', refreshedTeams.map((t: any) => ({ id: t.id, franchise: t.franchiseName })))
-        
-        // Update local state with all refreshed teams from database
-        setTeams(refreshedTeams)
+        // Update local state with the saved team (no need to refetch all teams)
+        // This avoids an extra network call and speeds up the response
+        const updatedTeams = teams.map((t) => t.id === teamId ? savedTeam : t)
+        setTeams(updatedTeams)
 
-        // Broadcast update to all connected clients with pre-fetched teams data
+        // Broadcast update to all connected clients with just the updated team data
         console.log('📡 Broadcasting update to all clients...')
         await broadcastUpdate({
-          teams: refreshedTeams,
+          teams: updatedTeams,
           players: players,
           transactions: transactions,
           trades: trades,
