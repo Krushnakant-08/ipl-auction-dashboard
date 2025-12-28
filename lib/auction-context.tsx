@@ -419,6 +419,8 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
 
   const startPlayerAuction = useCallback(async () => {
     try {
+      console.log('🎬 Starting player auction - current phase:', settings.currentPhase)
+      
       // Auto-complete teams that have franchises assigned but not marked complete
       const updatedTeams = teams.map((t) => 
         t.franchiseName && !t.teamAuctionComplete 
@@ -431,15 +433,18 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         t.teamAuctionComplete !== teams[i].teamAuctionComplete
       )
       
-      await Promise.all(
-        teamsToUpdate.map((team) =>
-          fetch('/api/teams', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(team),
-          })
+      if (teamsToUpdate.length > 0) {
+        console.log(`📤 Updating ${teamsToUpdate.length} teams in database`)
+        await Promise.all(
+          teamsToUpdate.map((team) =>
+            fetch('/api/teams', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(team),
+            })
+          )
         )
-      )
+      }
 
       // Update settings in database
       const newSettings: AuctionSettings = { 
@@ -450,6 +455,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         tradingWindowEnd: settings.tradingWindowEnd,
       }
       
+      console.log('📤 Updating settings to Player Auction phase')
       const settingsResponse = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -457,7 +463,9 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (!settingsResponse.ok) {
-        throw new Error('Failed to update settings in database')
+        const errorText = await settingsResponse.text()
+        console.error('❌ Settings update failed:', settingsResponse.status, errorText)
+        throw new Error(`Failed to update settings in database: ${errorText}`)
       }
 
       const savedSettings = await settingsResponse.json()
@@ -467,8 +475,14 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       setTeams(updatedTeams)
       setSettings(savedSettings)
 
-      // Broadcast update to all clients
-      await broadcastUpdate()
+      // Broadcast update to all clients (non-blocking)
+      broadcastUpdate({
+        teams: updatedTeams,
+        players: players,
+        transactions: transactions,
+        trades: trades,
+        settings: savedSettings,
+      }).catch(err => console.error('Broadcast failed:', err))
       
       toast({
         title: "Player Auction Started!",
@@ -476,6 +490,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       })
     } catch (error) {
       console.error('❌ Error starting player auction:', error)
+      console.error('Error details:', error instanceof Error ? error.message : String(error))
       toast({ title: "Error", description: "Failed to start player auction", variant: "destructive" })
     }
   }, [teams, settings, toast, broadcastUpdate])
