@@ -162,24 +162,66 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   const getTeamPlayers = useCallback((teamId: string) => players.filter((p) => p.currentTeam === teamId), [players])
 
   // Helper function to broadcast updates to all clients
-  const broadcastUpdate = useCallback(async () => {
+  const broadcastUpdate = useCallback(async (preFetchedData?: {
+    teams?: Team[]
+    players?: Player[]
+    transactions?: AuctionTransaction[]
+    trades?: Trade[]
+    settings?: AuctionSettings
+  }) => {
     try {
-      // Fetch fresh data from database
-      const [teamsRes, playersRes, transactionsRes, tradesRes, settingsRes] = await Promise.all([
-        fetch('/api/teams', { cache: 'no-store' }),
-        fetch('/api/players', { cache: 'no-store' }),
-        fetch('/api/transactions', { cache: 'no-store' }),
-        fetch('/api/trades', { cache: 'no-store' }),
-        fetch('/api/settings', { cache: 'no-store' }),
-      ])
+      // Use pre-fetched data if available, otherwise fetch from database
+      let freshTeams: Team[]
+      let freshPlayers: Player[]
+      let freshTransactions: AuctionTransaction[]
+      let freshTrades: Trade[]
+      let freshSettings: AuctionSettings
 
-      const [freshTeams, freshPlayers, freshTransactions, freshTrades, freshSettings] = await Promise.all([
-        teamsRes.json(),
-        playersRes.json(),
-        transactionsRes.json(),
-        tradesRes.json(),
-        settingsRes.json(),
-      ])
+      if (preFetchedData?.teams && preFetchedData?.players && preFetchedData?.transactions && preFetchedData?.trades && preFetchedData?.settings) {
+        // Use all pre-fetched data
+        freshTeams = preFetchedData.teams
+        freshPlayers = preFetchedData.players
+        freshTransactions = preFetchedData.transactions
+        freshTrades = preFetchedData.trades
+        freshSettings = preFetchedData.settings
+        console.log('📦 Using pre-fetched data for broadcast')
+      } else {
+        // Fetch only what's missing
+        const fetchPromises: Promise<Response>[] = []
+        const fetchTypes: string[] = []
+
+        if (!preFetchedData?.teams) {
+          fetchPromises.push(fetch('/api/teams', { cache: 'no-store' }))
+          fetchTypes.push('teams')
+        }
+        if (!preFetchedData?.players) {
+          fetchPromises.push(fetch('/api/players', { cache: 'no-store' }))
+          fetchTypes.push('players')
+        }
+        if (!preFetchedData?.transactions) {
+          fetchPromises.push(fetch('/api/transactions', { cache: 'no-store' }))
+          fetchTypes.push('transactions')
+        }
+        if (!preFetchedData?.trades) {
+          fetchPromises.push(fetch('/api/trades', { cache: 'no-store' }))
+          fetchTypes.push('trades')
+        }
+        if (!preFetchedData?.settings) {
+          fetchPromises.push(fetch('/api/settings', { cache: 'no-store' }))
+          fetchTypes.push('settings')
+        }
+
+        const responses = await Promise.all(fetchPromises)
+        const fetchedData = await Promise.all(responses.map(r => r.json()))
+
+        // Map fetched data back
+        let dataIndex = 0
+        freshTeams = preFetchedData?.teams ?? (fetchTypes[dataIndex] === 'teams' ? fetchedData[dataIndex++] : teams)
+        freshPlayers = preFetchedData?.players ?? (fetchTypes[dataIndex] === 'players' ? fetchedData[dataIndex++] : players)
+        freshTransactions = preFetchedData?.transactions ?? (fetchTypes[dataIndex] === 'transactions' ? fetchedData[dataIndex++] : transactions)
+        freshTrades = preFetchedData?.trades ?? (fetchTypes[dataIndex] === 'trades' ? fetchedData[dataIndex++] : trades)
+        freshSettings = preFetchedData?.settings ?? (fetchTypes[dataIndex] === 'settings' ? fetchedData[dataIndex++] : settings)
+      }
 
       // Broadcast to WebSocket
       await fetch('/api/auction', {
@@ -198,7 +240,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Failed to broadcast update:', error)
     }
-  }, [])
+  }, [teams, players, transactions, trades, settings])
 
   // Team Auction: Assign franchise to team
   const assignFranchise = useCallback(
@@ -342,9 +384,15 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         // Update local state with all refreshed teams from database
         setTeams(refreshedTeams)
 
-        // Broadcast update to all connected clients
+        // Broadcast update to all connected clients with pre-fetched teams data
         console.log('📡 Broadcasting update to all clients...')
-        await broadcastUpdate()
+        await broadcastUpdate({
+          teams: refreshedTeams,
+          players: players,
+          transactions: transactions,
+          trades: trades,
+          settings: settings,
+        })
         console.log('✅ Broadcast completed')
 
         toast({
@@ -636,9 +684,10 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         })
 
         // Refresh all data from database to ensure state is in sync
-        const [refreshedTeams, refreshedPlayers] = await Promise.all([
+        const [refreshedTeams, refreshedPlayers, refreshedTransactions] = await Promise.all([
           fetch(`/api/teams?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
           fetch(`/api/players?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
+          fetch(`/api/transactions?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
         ])
         
         console.log(`🔄 Refreshed state after player sale: ${refreshedTeams.length} teams, ${refreshedPlayers.length} players`)
@@ -648,8 +697,14 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         setTeams(refreshedTeams)
         setTransactions((prev) => [...prev, transaction])
 
-        // Broadcast update to all clients
-        await broadcastUpdate()
+        // Broadcast update to all clients with pre-fetched data to avoid redundant API calls
+        await broadcastUpdate({
+          teams: refreshedTeams,
+          players: refreshedPlayers,
+          transactions: refreshedTransactions,
+          trades: trades,
+          settings: settings,
+        })
 
         toast({
           title: "Player Sold!",
