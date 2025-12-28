@@ -603,6 +603,21 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         const newRemainingBudget = dbTeam.remainingBudget - price
         const newSquadPlayerIds = [...(dbTeam.squadPlayerIds || []), playerId]
 
+        // Prepare updated player and team objects
+        const updatedPlayer = {
+          ...dbPlayer,
+          status: 'Sold',
+          currentTeam: teamId,
+          purchasePrice: price,
+          originalTeam: teamId,
+        }
+
+        const updatedTeam = {
+          ...dbTeam,
+          remainingBudget: newRemainingBudget,
+          squadPlayerIds: newSquadPlayerIds,
+        }
+
         // Update player and team in database in parallel
         const [playerUpdateResponse, teamUpdateResponse] = await Promise.all([
           fetch('/api/players', {
@@ -620,11 +635,6 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         if (!playerUpdateResponse.ok || !teamUpdateResponse.ok) {
           throw new Error('Failed to update player or team in database')
         }
-
-        const [savedPlayer, savedTeam] = await Promise.all([
-          playerUpdateResponse.json(),
-          teamUpdateResponse.json()
-        ])
 
         const [savedPlayer, savedTeam] = await Promise.all([
           playerUpdateResponse.json(),
