@@ -37,7 +37,11 @@ export async function PUT(request: NextRequest) {
     await connectDB()
     const body = await request.json()
     const settings = await Settings.findOneAndUpdate({}, body, { new: true, upsert: true })
-    return NextResponse.json(settings)
+    return NextResponse.json(settings, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+      },
+    })
   } catch (error) {
     console.error('Error updating settings:', error)
     return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 })
