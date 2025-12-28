@@ -25,6 +25,7 @@ interface AuctionContextType {
 
   // Trading Window
   startTradingWindow: (durationMinutes: number) => Promise<void>
+  endTradingWindow: () => Promise<void>
   proposeTrade: (proposedBy: string, proposedTo: string, offeredPlayers: string[], requestedPlayers: string[], message?: string) => Promise<boolean>
   respondToTrade: (tradeId: string, accept: boolean) => Promise<boolean>
   cancelTrade: (tradeId: string, teamId: string) => Promise<boolean>
@@ -1091,6 +1092,44 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [settings, toast, broadcastUpdate])
 
+  // Trading Window: End trading window
+  const endTradingWindow = useCallback(async () => {
+    try {
+      const newSettings = {
+        initialBudget: settings.initialBudget,
+        minSquadSize: settings.minSquadSize,
+        maxSquadSize: settings.maxSquadSize,
+        currentPhase: "Pre-Auction" as const,
+        tradingWindowEnd: null
+      }
+
+      // Save to database
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update settings')
+      }
+
+      const savedSettings = await response.json()
+      setSettings(savedSettings)
+
+      // Broadcast update
+      await broadcastUpdate()
+
+      toast({
+        title: "Trading Window Closed",
+        description: "The trading window has been closed successfully"
+      })
+    } catch (error) {
+      console.error('❌ Error ending trading window:', error)
+      toast({ title: "Error", description: "Failed to end trading window", variant: "destructive" })
+    }
+  }, [settings, toast, broadcastUpdate])
+
   // Trading Window: Propose a trade
   const proposeTrade = useCallback(async (
     proposedBy: string,
@@ -1591,6 +1630,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         canStartPlayerAuction,
         startPlayerAuction,
         startTradingWindow,
+        endTradingWindow,
         proposeTrade,
         respondToTrade,
         cancelTrade,
