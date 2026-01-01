@@ -1,5 +1,4 @@
 "use client"
-
 import { useAuction } from "@/lib/auction-context"
 import { Navigation } from "@/components/navigation"
 import { DatabaseAdmin } from "@/components/database-admin"
@@ -21,6 +20,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { defaultSettings } from "@/lib/mock-data"
+
 
 export default function SettingsPage() {
   const { settings, resetAuction } = useAuction()
@@ -207,7 +208,7 @@ export default function SettingsPage() {
                   max="500"
                   step="10"
                   value={localSettings.initialBudget}
-                  onChange={(e) => setLocalSettings({ ...localSettings, initialBudget: Number(e.target.value) })}
+                  onChange={(e) => {setLocalSettings({ ...localSettings, initialBudget: Number(e.target.value) }); defaultSettings.initialBudget = Number(e.target.value)}}
                 />
                 <p className="text-xs text-muted-foreground">Budget allocated to each team at the start (₹50-500 Cr)</p>
               </div>
@@ -220,7 +221,7 @@ export default function SettingsPage() {
                   min="7"
                   max="15"
                   value={localSettings.minSquadSize}
-                  onChange={(e) => setLocalSettings({ ...localSettings, minSquadSize: Number(e.target.value) })}
+                  onChange={(e) => {setLocalSettings({ ...localSettings, minSquadSize: Number(e.target.value) }); defaultSettings.minSquadSize = Number(e.target.value)}}
                 />
                 <p className="text-xs text-muted-foreground">Minimum number of players required in a squad</p>
               </div>
@@ -233,7 +234,7 @@ export default function SettingsPage() {
                   min="11"
                   max="25"
                   value={localSettings.maxSquadSize}
-                  onChange={(e) => setLocalSettings({ ...localSettings, maxSquadSize: Number(e.target.value) })}
+                  onChange={(e) => {setLocalSettings({ ...localSettings, maxSquadSize: Number(e.target.value) }); defaultSettings.maxSquadSize = Number(e.target.value)}}
                 />
                 <p className="text-xs text-muted-foreground">Maximum number of players allowed in a squad</p>
               </div>

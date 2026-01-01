@@ -36,14 +36,14 @@ export function RTMDialog({ playerId, originalTeamId, onClose }: RTMDialogProps)
     }
   }, [playerId, originalTeamId])
 
-  const handleUseRTM = () => {
+  const handleUseRTM = async () => {
     if (!playerId || !originalTeamId) return
 
     setIsProcessing(true)
-    const success = executeRTM(playerId, originalTeamId)
+    const success = await executeRTM(playerId, originalTeamId)
     setIsProcessing(false)
 
-    if (success) {
+    if (await success) {
       onClose()
     }
   }
@@ -56,7 +56,7 @@ export function RTMDialog({ playerId, originalTeamId, onClose }: RTMDialogProps)
 
   return (
     <Dialog open={!!playerId} onOpenChange={() => onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-125">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />

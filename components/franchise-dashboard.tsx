@@ -26,13 +26,14 @@ export function FranchiseDashboard() {
     const totalSpent =
       myTeam.franchiseBid +
       myPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)
+    const remainingBudget = settings.initialBudget - totalSpent
     const avgPrice = myPlayers.length > 0 ? myPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0) / myPlayers.length : 0
     const overseasCount = myPlayers.filter((p) => p.country !== "India").length
-    const budgetUsedPercent = (totalSpent / settings.initialBudget) * 100
+    const budgetUsedPercent = totalSpent > 0 ? (totalSpent / settings.initialBudget) * 100 : 0
 
     return {
       totalSpent,
-      remainingBudget: myTeam.remainingBudget,
+      remainingBudget,
       squadSize: myPlayers.length,
       maxSquadSize: settings.maxSquadSize,
       avgPrice,
@@ -54,7 +55,7 @@ export function FranchiseDashboard() {
 
   if (!myTeam || !stats) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-100">
         <div className="text-center">
           <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-lg font-medium text-muted-foreground">Team not found</p>
@@ -169,7 +170,7 @@ export function FranchiseDashboard() {
             <CardDescription>Your squad composition by role</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px]">
+            <div className="h-62.5">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={roleDistribution}>
                   <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} />
@@ -259,9 +260,9 @@ export function FranchiseDashboard() {
                       </TableCell>
                       <TableCell>{player.country}</TableCell>
                       <TableCell className="text-right font-medium">₹{player.purchasePrice} Cr</TableCell>
-                      <TableCell className="text-center">
+                      {/* <TableCell className="text-center">
                         <Badge variant="secondary">{player.ratings.overall}</Badge>
-                      </TableCell>
+                      </TableCell> */}
                     </TableRow>
                   ))}
                 </TableBody>
