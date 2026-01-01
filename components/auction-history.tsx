@@ -53,7 +53,7 @@ export function AuctionHistory() {
             <TableBody>
               {transactions
                 .slice()
-                .reverse()
+                .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                 .map((txn) => {
                   const player = players.find((p) => p.id === txn.playerId)
                   const team = teams.find((t) => t.id === txn.soldToTeam)
