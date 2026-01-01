@@ -1,9 +1,9 @@
 import mongoose from 'mongoose'
 
 const SettingsSchema = new mongoose.Schema({
-  initialBudget: { type: Number, default: 100 },
-  minSquadSize: { type: Number, default: 7 },
-  maxSquadSize: { type: Number, default: 11 },
+  initialBudget: { type: Number },
+  minSquadSize: { type: Number },
+  maxSquadSize: { type: Number },
   currentPhase: { 
     type: String, 
     enum: ['Team Auction', 'Player Auction', 'Trading Window', 'Finalization'],

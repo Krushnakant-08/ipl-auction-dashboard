@@ -24,7 +24,7 @@ export default function TradingPage() {
     proposeTrade,
     respondToTrade,
     cancelTrade,
-    approveTrade,
+    // approveTrade,
     startTradingWindow,
     endTradingWindow,
   } = useAuction()
@@ -68,8 +68,8 @@ export default function TradingPage() {
   }, [trades, userTeam, isAdmin])
 
   const pendingTrades = myTrades.filter(t => t.status === "Pending")
-  const pendingApprovalTrades = myTrades.filter(t => t.status === "Pending Admin Approval")
-  const completedTrades = myTrades.filter(t => t.status !== "Pending" && t.status !== "Pending Admin Approval")
+  // const pendingApprovalTrades = myTrades.filter(t => t.status === "Pending Admin Approval")
+  const completedTrades = myTrades.filter(t => t.status !== "Pending")
 
   const handleStartTradingWindow = () => {
     const minutes = parseInt(durationMinutes)
@@ -408,76 +408,6 @@ export default function TradingPage() {
               )}
             </CardContent>
           </Card>
-
-          {/* Admin Approval Section */}
-          {isAdmin() && pendingApprovalTrades.length > 0 && (
-            <Card className="border-primary">
-              <CardHeader className="bg-primary/5">
-                <CardTitle>Trades Awaiting Approval</CardTitle>
-                <CardDescription>Both franchises have agreed - approve to complete</CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {pendingApprovalTrades.map(trade => (
-                    <Card key={trade.id}>
-                      <CardContent className="pt-6 space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="font-semibold">{trade.proposedByName}</div>
-                            <div className="text-sm text-muted-foreground">to {trade.proposedToName}</div>
-                          </div>
-                          <Badge className="bg-orange-500">Awaiting Approval</Badge>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <div className="font-medium mb-1">Offering:</div>
-                            {trade.offeredPlayers.map(pid => {
-                              const player = players.find(p => p.id === pid)
-                              return <div key={pid} className="text-muted-foreground">{player?.name}</div>
-                            })}
-                          </div>
-                          <div>
-                            <div className="font-medium mb-1">Requesting:</div>
-                            {trade.requestedPlayers.map(pid => {
-                              const player = players.find(p => p.id === pid)
-                              return <div key={pid} className="text-muted-foreground">{player?.name}</div>
-                            })}
-                          </div>
-                        </div>
-
-                        {trade.message && (
-                          <div className="text-sm italic text-muted-foreground border-l-2 pl-2">
-                            "{trade.message}"
-                          </div>
-                        )}
-
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => approveTrade(trade.id, true)}
-                            className="flex-1"
-                          >
-                            <Check className="h-4 w-4 mr-1" />
-                            Approve Trade
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => approveTrade(trade.id, false)}
-                            className="flex-1"
-                          >
-                            <X className="h-4 w-4 mr-1" />
-                            Reject Trade
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
 
           {/* Trade History */}
           <Card className="lg:col-span-2">

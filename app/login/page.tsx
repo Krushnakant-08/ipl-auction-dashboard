@@ -121,9 +121,9 @@ export default function LoginPage() {
                     }
                   }}
                 />
-                <p className="text-xs text-muted-foreground">
+                {/* <p className="text-xs text-muted-foreground">
                   Default password: <code className="bg-muted px-1 py-0.5 rounded">admin123</code>
-                </p>
+                </p> */}
               </div>
 
               <Button onClick={handleAdminLogin} className="w-full" size="lg" disabled={!adminPassword}>

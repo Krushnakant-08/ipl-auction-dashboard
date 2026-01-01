@@ -6,6 +6,7 @@ import Settings from '@/lib/models/Settings'
 import Transaction from '@/lib/models/Transaction'
 import Trade from '@/lib/models/Trade'
 import { mockTeams, mockPlayers, defaultSettings } from '@/lib/mock-data'
+import { log } from 'console'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -18,6 +19,7 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     await connectDB()
+    console.log('🌱 Initializing database with mock data...')
     
     // Check if data already exists
     const existingTeamsCount = await Team.countDocuments()
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Database initialized with mock data')
     console.log('💰 Initial budget per team:', currentSettings.initialBudget, 'Cr')
-    
+    console.log('players created:', mockPlayers)
     return NextResponse.json({
       success: true,
       message: 'Database initialized successfully',

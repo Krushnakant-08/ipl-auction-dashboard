@@ -7,6 +7,16 @@ import { mockTeams, mockPlayers, defaultSettings, availableFranchises } from "./
 import { useToast } from "@/hooks/use-toast"
 import { AuctionWebSocket } from "./websocket"
 
+const mockOriginalTeamMap = new Map<string, string | null>(
+  mockPlayers.map((player) => [player.id, player.originalTeam ?? null]),
+)
+
+const enforceOriginalTeam = (incoming: Player[]): Player[] =>
+  incoming.map((player) => ({
+    ...player,
+    originalTeam: mockOriginalTeamMap.get(player.id) ?? player.originalTeam ?? null,
+  }))
+
 interface AuctionContextType {
   settings: AuctionSettings
   teams: Team[]
@@ -29,11 +39,11 @@ interface AuctionContextType {
   proposeTrade: (proposedBy: string, proposedTo: string, offeredPlayers: string[], requestedPlayers: string[], message?: string) => Promise<boolean>
   respondToTrade: (tradeId: string, accept: boolean) => Promise<boolean>
   cancelTrade: (tradeId: string, teamId: string) => Promise<boolean>
-  approveTrade: (tradeId: string, approve: boolean) => Promise<boolean>
+  // approveTrade: (tradeId: string, approve: boolean) => Promise<boolean>
 
   // RTM
   useRTM: (playerId: string, originalTeamId: string) => Promise<boolean>
-  canUseRTM: (playerId: string, teamId: string) => { can: boolean; reason?: string }
+  canUseRTM: (playerId: string, teamId: string) => { can: boolean; reason: string }
 
   // RTS
   useRTS: (playerId: string, teamId: string) => Promise<boolean>
@@ -53,7 +63,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast()
   const [settings, setSettings] = useState<AuctionSettings>(defaultSettings)
   const [teams, setTeams] = useState<Team[]>(mockTeams)
-  const [players, setPlayers] = useState<Player[]>(mockPlayers)
+  const [players, setPlayers] = useState<Player[]>(() => enforceOriginalTeam(mockPlayers))
   const [transactions, setTransactions] = useState<AuctionTransaction[]>([])
   const [trades, setTrades] = useState<Trade[]>([])
   const [isInitialized, setIsInitialized] = useState(false)
@@ -85,7 +95,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         
         if (data.settings) setSettings(data.settings)
         if (data.teams) setTeams(data.teams)
-        if (data.players) setPlayers(data.players)
+        if (data.players) setPlayers(enforceOriginalTeam(data.players))
         if (data.transactions) setTransactions(data.transactions)
         if (data.trades) setTrades(data.trades)
         
@@ -112,7 +122,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         if (!isSavingRef.current && !isCleaningUpRef.current) {
           if (data.settings) setSettings(data.settings)
           if (data.teams) setTeams(data.teams)
-          if (data.players) setPlayers(data.players)
+          if (data.players) setPlayers(enforceOriginalTeam(data.players))
           if (data.transactions) setTransactions(data.transactions)
           if (data.trades) setTrades(data.trades)
         }
@@ -244,14 +254,10 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     async (teamId: string, franchiseId: string, bidAmount: number) => {
       console.log('🎯 assignFranchise called:', { teamId, franchiseId, bidAmount })
       
-      const team = getTeamById(teamId)
       const franchise = availableFranchises.find((f) => f.id === franchiseId)
 
-      console.log('Found team:', team)
-      console.log('Found franchise:', franchise)
-
-      if (!team || !franchise) {
-        toast({ title: "Error", description: "Team or franchise not found", variant: "destructive" })
+      if (!franchise) {
+        toast({ title: "Error", description: "Franchise not found", variant: "destructive" })
         return false
       }
 
@@ -264,19 +270,55 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return false
       }
 
-      // Check if franchise already taken
-      const franchiseTaken = teams.some((t) => t.franchiseName === franchise.name && t.id !== teamId)
-      console.log('Franchise taken?', franchiseTaken)
-      
-      if (franchiseTaken) {
-        toast({ title: "Franchise Taken", description: "This franchise is already assigned", variant: "destructive" })
-        return false
-      }
-
-      console.log('✅ Assigning franchise to team')
+      console.log('📥 Fetching fresh team data from database')
       
       try {
-        // Calculate new remaining budget
+        // Fetch fresh team and teams data from database to ensure we have latest budget
+        const timestamp = Date.now()
+        const [teamResponse, teamsResponse] = await Promise.all([
+          fetch(`/api/teams?t=${timestamp}`, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+            },
+          }),
+          fetch(`/api/teams?t=${timestamp}`, {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+            },
+          })
+        ])
+
+        if (!teamResponse.ok || !teamsResponse.ok) {
+          throw new Error('Failed to fetch team data from database')
+        }
+
+        const freshTeams = await teamsResponse.json()
+        const team = freshTeams.find((t: Team) => t.id === teamId)
+
+        console.log('Found team with fresh data:', team)
+        console.log('Found franchise:', franchise)
+
+        if (!team) {
+          toast({ title: "Error", description: "Team not found in database", variant: "destructive" })
+          return false
+        }
+
+        // Check if franchise already taken
+        const franchiseTaken = freshTeams.some((t: Team) => t.franchiseName === franchise.name && t.id !== teamId)
+        console.log('Franchise taken?', franchiseTaken)
+        
+        if (franchiseTaken) {
+          toast({ title: "Franchise Taken", description: "This franchise is already assigned", variant: "destructive" })
+          return false
+        }
+
+        console.log('✅ Assigning franchise to team')
+        
+        // Calculate new remaining budget using fresh data
         const newRemainingBudget = team.remainingBudget - bidAmount
         
         if (newRemainingBudget < 0) {
@@ -313,9 +355,8 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         const savedTeam = await updateResponse.json()
         console.log('✅ Team updated in database:', savedTeam)
 
-        // Update local state with the saved team (no need to refetch all teams)
-        // This avoids an extra network call and speeds up the response
-        const updatedTeams = teams.map((t) => t.id === teamId ? savedTeam : t)
+        // Update local state with fresh teams data including the saved team
+        const updatedTeams = freshTeams.map((t: Team) => t.id === teamId ? savedTeam : t)
         setTeams(updatedTeams)
 
         // Broadcast update to all connected clients with just the updated team data
@@ -358,22 +399,39 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🎬 Starting player auction - current phase:', settings.currentPhase)
       
+      // Fetch fresh team data from database to ensure we have the latest budgets
+      const timestamp = Date.now()
+      const freshTeamsResponse = await fetch(`/api/teams?t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+        },
+      })
+      
+      if (!freshTeamsResponse.ok) {
+        throw new Error('Failed to fetch teams from database')
+      }
+      
+      const freshTeams = await freshTeamsResponse.json()
+      console.log('📥 Fetched fresh teams from database:', freshTeams.length)
+      
       // Auto-complete teams that have franchises assigned but not marked complete
-      const updatedTeams = teams.map((t) => 
+      const updatedTeams = freshTeams.map((t: Team) => 
         t.franchiseName && !t.teamAuctionComplete 
           ? { ...t, teamAuctionComplete: true } 
           : t
       )
 
       // Update teams in database if any changed
-      const teamsToUpdate = updatedTeams.filter((t, i) => 
-        t.teamAuctionComplete !== teams[i].teamAuctionComplete
+      const teamsToUpdate = updatedTeams.filter((t: Team, i: number) => 
+        t.teamAuctionComplete !== freshTeams[i].teamAuctionComplete
       )
       
       if (teamsToUpdate.length > 0) {
         console.log(`📤 Updating ${teamsToUpdate.length} teams in database`)
         await Promise.all(
-          teamsToUpdate.map((team) =>
+          teamsToUpdate.map((team: any) =>
             fetch('/api/teams', {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
@@ -560,8 +618,9 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           ...dbPlayer,
           status: 'Sold',
           currentTeam: teamId,
+          currentTeamName: team.franchiseName || team.groupName,
           purchasePrice: price,
-          originalTeam: teamId,
+          originalTeam: dbPlayer.originalTeam ?? mockOriginalTeamMap.get(playerId) ?? null,
         }
 
         const updatedTeam = {
@@ -615,8 +674,8 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         }).catch(err => console.warn('Transaction save failed:', err))
 
         // Update players list with the saved player
-        const updatedPlayers = dbPlayers.map((p: any) => 
-          p.id === playerId ? savedPlayer : p
+        const updatedPlayers = enforceOriginalTeam(
+          dbPlayers.map((p: any) => (p.id === playerId ? savedPlayer : p)),
         )
         
         // Update teams list with the saved team
@@ -688,7 +747,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return { can: false, reason: "Squad full" }
       }
 
-      return { can: true }
+      return { can: true, reason: "" }
     },
     [getPlayerById, getTeamById, settings],
   )
@@ -799,7 +858,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         ])
 
         setTeams(newTeams)
-        setPlayers(newPlayers)
+        setPlayers(enforceOriginalTeam(newPlayers))
         setTransactions(newTransactions)
 
         // Broadcast update to all clients
@@ -975,7 +1034,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       setPlayers((prev) =>
         prev.map((p) =>
           p.id === lastTxn.playerId
-            ? { ...p, status: "Unsold", currentTeam: null, purchasePrice: null, originalTeam: null }
+            ? { ...p, status: "Unsold", currentTeam: null, purchasePrice: null }
             : p,
         ),
       )
@@ -1026,7 +1085,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   const resetAuction = useCallback(async () => {
     setSettings(defaultSettings)
     setTeams(mockTeams)
-    setPlayers(mockPlayers)
+    setPlayers(enforceOriginalTeam(mockPlayers))
     setTransactions([])
     setTrades([])
     
@@ -1353,7 +1412,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           fetch('/api/teams').then(r => r.json())
         ])
 
-        setPlayers(newPlayers)
+        setPlayers(enforceOriginalTeam(newPlayers))
         setTeams(newTeams)
         setTrades(prev => prev.map(t => t.id === tradeId ? savedTrade : t))
 
@@ -1469,140 +1528,13 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       return false
     }
   }, [trades, toast, broadcastUpdate])
-
-  // Trading Window: Admin approve/reject trade
-  const approveTrade = useCallback(async (tradeId: string, approve: boolean) => {
-    const trade = trades.find(t => t.id === tradeId)
-
-    if (!trade) {
-      toast({ title: "Error", description: "Trade not found", variant: "destructive" })
-      return false
-    }
-
-    if (trade.status !== "Pending Admin Approval") {
-      toast({ title: "Error", description: "Trade not awaiting approval", variant: "destructive" })
-      return false
-    }
-
-    console.log('🔄 Approving trade - updating database')
-
-    try {
-      // Verify from database
-      const [dbPlayersResponse, dbTeamsResponse, dbTradesResponse] = await Promise.all([
-        fetch('/api/players'),
-        fetch('/api/teams'),
-        fetch('/api/trades')
-      ])
-
-      const dbPlayers = await dbPlayersResponse.json()
-      const dbTeams = await dbTeamsResponse.json()
-      const dbTrades = await dbTradesResponse.json()
-
-      const dbTrade = dbTrades.find((t: any) => t.id === tradeId)
-
-      if (!dbTrade || dbTrade.status !== 'Pending Admin Approval') {
-        toast({ title: "Error", description: "Trade status changed", variant: "destructive" })
-        return false
-      }
-
-      if (approve) {
-        // Execute the trade - swap players between teams
-        const playerUpdates = dbPlayers.map((p: any) => {
-          if (trade.offeredPlayers.includes(p.id)) {
-            return fetch('/api/players', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...p, currentTeam: trade.proposedTo }),
-            })
-          }
-          if (trade.requestedPlayers.includes(p.id)) {
-            return fetch('/api/players', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ...p, currentTeam: trade.proposedBy }),
-            })
-          }
-          return null
-        }).filter(Boolean)
-
-        // Update team squads
-        const proposingTeam = dbTeams.find((t: any) => t.id === trade.proposedBy)
-        const targetTeam = dbTeams.find((t: any) => t.id === trade.proposedTo)
-
-        const teamUpdates = [
-          fetch('/api/teams', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...proposingTeam,
-              squadPlayerIds: [
-                ...(proposingTeam.squadPlayerIds || []).filter((pid: string) => !trade.offeredPlayers.includes(pid)),
-                ...trade.requestedPlayers
-              ]
-            }),
-          }),
-          fetch('/api/teams', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...targetTeam,
-              squadPlayerIds: [
-                ...(targetTeam.squadPlayerIds || []).filter((pid: string) => !trade.requestedPlayers.includes(pid)),
-                ...trade.offeredPlayers
-              ]
-            }),
-          })
-        ]
-
-        await Promise.all([...playerUpdates, ...teamUpdates])
-
-        toast({
-          title: "Trade Approved!",
-          description: `Players exchanged between ${trade.proposedByName} and ${trade.proposedToName}`
-        })
-      } else {
-        toast({
-          title: "Trade Rejected",
-          description: "Admin rejected the trade"
-        })
-      }
-
-      // Update trade status in database
-      const updatedTrade = {
-        ...dbTrade,
-        status: approve ? "Accepted" : "Rejected",
-        respondedAt: new Date(),
-      }
-
-      const tradeResponse = await fetch('/api/trades', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedTrade),
-      })
-
-      const savedTrade = await tradeResponse.json()
-      console.log('✅ Trade approval completed - Database updated')
-
-      // Refresh all data from database
-      const [newPlayers, newTeams] = await Promise.all([
-        fetch('/api/players').then(r => r.json()),
-        fetch('/api/teams').then(r => r.json())
-      ])
-
-      setPlayers(newPlayers)
-      setTeams(newTeams)
-      setTrades(prev => prev.map(t => t.id === tradeId ? savedTrade : t))
-
-      // Broadcast update
-      await broadcastUpdate()
-
-      return true
-    } catch (error) {
-      console.error('❌ Error approving trade:', error)
-      toast({ title: "Error", description: "Failed to approve trade", variant: "destructive" })
-      return false
-    }
-  }, [trades, toast, broadcastUpdate])
+  // Wait until initial data has been loaded from server to avoid
+  // rendering UI with mock/default settings (e.g. default 100 Cr)
+  if (!isInitialized) {
+    return (
+      <div style={{ padding: 12 }}>Loading auction configuration…</div>
+    )
+  }
 
   return (
     <AuctionContext.Provider
@@ -1621,7 +1553,6 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         proposeTrade,
         respondToTrade,
         cancelTrade,
-        approveTrade,
         sellPlayer,
         useRTM,
         canUseRTM,

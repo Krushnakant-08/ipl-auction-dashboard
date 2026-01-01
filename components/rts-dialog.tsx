@@ -34,11 +34,11 @@ export function RTSDialog({ teamId, open, onClose }: RTSDialogProps) {
 
   const validation = { can: false, reason: "" } // Initialize validation at the top level
 
-  const handleUseRTS = () => {
+  const handleUseRTS = async () => {
     if (!selectedPlayerId || !teamId) return
 
     setIsProcessing(true)
-    const success = executeRTS(selectedPlayerId, teamId)
+    const success = await executeRTS(selectedPlayerId, teamId)
     setIsProcessing(false)
 
     if (success) {
@@ -57,7 +57,7 @@ export function RTSDialog({ teamId, open, onClose }: RTSDialogProps) {
   if (teamId) {
     const validationResult = canUseRTS(teamId)
     validation.can = validationResult.can
-    validation.reason = validationResult.reason
+    validation.reason = validationResult.reason ?? ""
   }
 
   return (

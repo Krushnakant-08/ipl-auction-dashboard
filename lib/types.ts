@@ -1,8 +1,8 @@
-export type PlayerRole = "Batsman" | "Bowler" | "All-rounder"
+export type PlayerRole = "Batsman" | "Bowler" | "All-rounder" | "Wk/Batsman"
 export type PlayerStatus = "Unsold" | "Sold"
 export type AuctionPhase = "Team Auction" | "Player Auction" | "Trading Window" | "Finalization"
 export type UserRole = "admin" | "franchise"
-export type TradeStatus = "Pending" | "Pending Admin Approval" | "Accepted" | "Rejected" | "Cancelled"
+export type TradeStatus = "Pending" | "Accepted" | "Rejected" | "Cancelled"
 
 export interface User {
   id: string
@@ -11,23 +11,12 @@ export interface User {
   teamId?: string // Only for franchise users
 }
 
-export interface PlayerRatings {
-  overall: number // 0-100
-  powerplayBatting: number // 0-10
-  powerplayBowling: number // 0-10
-  middleOversBatting: number // 0-10
-  middleOversBowling: number // 0-10
-  deathOversBatting: number // 0-10
-  deathOversBowling: number // 0-10
-}
-
 export interface Player {
   id: string
   name: string
   role: PlayerRole
   basePrice: number // Starting auction price in Cr
   country: string // Player's nationality
-  ratings: PlayerRatings
   originalTeam: string | null // Original franchise they belonged to
   currentTeam: string | null // Current owner
   purchasePrice: number | null
