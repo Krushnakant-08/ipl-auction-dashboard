@@ -1528,13 +1528,6 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       return false
     }
   }, [trades, toast, broadcastUpdate])
-  // Wait until initial data has been loaded from server to avoid
-  // rendering UI with mock/default settings (e.g. default 100 Cr)
-  if (!isInitialized) {
-    return (
-      <div style={{ padding: 12 }}>Loading auction configuration…</div>
-    )
-  }
 
   return (
     <AuctionContext.Provider
