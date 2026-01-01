@@ -27,3 +27,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Failed to create transaction' }, { status: 500 })
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectDB()
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    
+    if (!id) {
+      return NextResponse.json({ error: 'Transaction ID required' }, { status: 400 })
+    }
+    
+    await Transaction.findOneAndDelete({ id })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error deleting transaction:', error)
+    return NextResponse.json({ error: 'Failed to delete transaction' }, { status: 500 })
+  }
+}

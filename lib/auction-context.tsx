@@ -1007,70 +1007,124 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     [canUseRTS, getPlayerById, getTeamById, toast, broadcastUpdate],
   )
 
-  const undoLastTransaction = useCallback(() => {
+  const undoLastTransaction = useCallback(async () => {
     if (transactions.length === 0) {
       toast({ title: "No transactions", description: "Nothing to undo", variant: "destructive" })
       return
     }
 
-    const lastTxn = transactions[transactions.length - 1]
-    const player = getPlayerById(lastTxn.playerId)
-    const team = getTeamById(lastTxn.soldToTeam)
+    console.log('🔄 Undoing last transaction - fetching from database')
 
-    if (!player || !team) return
+    try {
+      // Fetch fresh data from database
+      const [dbTransactionsResponse, dbPlayersResponse, dbTeamsResponse] = await Promise.all([
+        fetch('/api/transactions', { cache: 'no-store' }),
+        fetch('/api/players', { cache: 'no-store' }),
+        fetch('/api/teams', { cache: 'no-store' })
+      ])
 
-    if (lastTxn.type === "sale") {
-      // Undo regular sale
-      setPlayers((prev) =>
-        prev.map((p) =>
-          p.id === lastTxn.playerId
-            ? { ...p, status: "Unsold", currentTeam: null, purchasePrice: null }
-            : p,
-        ),
-      )
+      const [dbTransactions, dbPlayers, dbTeams] = await Promise.all([
+        dbTransactionsResponse.json(),
+        dbPlayersResponse.json(),
+        dbTeamsResponse.json()
+      ])
 
-      setTeams((prev) =>
-        prev.map((t) =>
-          t.id === lastTxn.soldToTeam
-            ? {
-                ...t,
-                remainingBudget: t.remainingBudget + lastTxn.soldPrice,
-                squadPlayerIds: t.squadPlayerIds.filter((id) => id !== lastTxn.playerId),
-              }
-            : t,
-        ),
-      )
-    } else if (lastTxn.type === "rtm") {
-      // Undo RTM - complex, need to restore previous owner
-      toast({ title: "Cannot Undo RTM", description: "RTM undo not supported", variant: "destructive" })
-      return
-    } else if (lastTxn.type === "rts") {
-      // Undo RTS
-      setTeams((prev) =>
-        prev.map((t) =>
-          t.id === lastTxn.soldToTeam
-            ? {
-                ...t,
-                remainingBudget: t.remainingBudget - Math.abs(lastTxn.soldPrice),
-                squadPlayerIds: [...t.squadPlayerIds, lastTxn.playerId],
-                rtsUsed: false,
-              }
-            : t,
-        ),
-      )
+      if (dbTransactions.length === 0) {
+        toast({ title: "No transactions", description: "Nothing to undo", variant: "destructive" })
+        return
+      }
 
-      setPlayers((prev) =>
-        prev.map((p) =>
-          p.id === lastTxn.playerId
-            ? { ...p, status: "Sold", currentTeam: lastTxn.soldToTeam, purchasePrice: Math.abs(lastTxn.soldPrice) }
-            : p,
-        ),
+      // Sort transactions by timestamp descending to get the most recent
+      const sortedTransactions = dbTransactions.sort((a: any, b: any) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       )
+      const lastTxn = sortedTransactions[0]
+
+      const player = dbPlayers.find((p: any) => p.id === lastTxn.playerId)
+      const team = dbTeams.find((t: any) => t.id === lastTxn.soldToTeam)
+
+      if (!player || !team) {
+        toast({ title: "Error", description: "Player or team not found", variant: "destructive" })
+        return
+      }
+
+      if (lastTxn.type === "rtm") {
+        toast({ title: "Cannot Undo RTM", description: "RTM undo not supported", variant: "destructive" })
+        return
+      }
+
+      let updatedPlayer, updatedTeam
+
+      if (lastTxn.type === "sale") {
+        // Undo regular sale
+        updatedPlayer = {
+          ...player,
+          status: 'Unsold',
+          currentTeam: null,
+          purchasePrice: null
+        }
+
+        updatedTeam = {
+          ...team,
+          remainingBudget: team.remainingBudget + lastTxn.soldPrice,
+          squadPlayerIds: (team.squadPlayerIds || []).filter((id: string) => id !== lastTxn.playerId)
+        }
+      } else if (lastTxn.type === "rts") {
+        // Undo RTS
+        updatedTeam = {
+          ...team,
+          remainingBudget: team.remainingBudget - Math.abs(lastTxn.soldPrice),
+          squadPlayerIds: [...(team.squadPlayerIds || []), lastTxn.playerId],
+          rtsUsed: false
+        }
+
+        updatedPlayer = {
+          ...player,
+          status: 'Sold',
+          currentTeam: lastTxn.soldToTeam,
+          purchasePrice: Math.abs(lastTxn.soldPrice)
+        }
+      }
+
+      // Update database
+      await Promise.all([
+        fetch('/api/players', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedPlayer)
+        }),
+        fetch('/api/teams', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedTeam)
+        }),
+        fetch(`/api/transactions?id=${lastTxn.id}`, {
+          method: 'DELETE'
+        })
+      ])
+
+      console.log('✅ Transaction undone - Database updated')
+
+      // Refresh data from database
+      const [newPlayers, newTeams, newTransactions] = await Promise.all([
+        fetch('/api/players').then(r => r.json()),
+        fetch('/api/teams').then(r => r.json()),
+        fetch('/api/transactions').then(r => r.json())
+      ])
+
+      setPlayers(enforceOriginalTeam(newPlayers))
+      setTeams(newTeams)
+      setTransactions(newTransactions)
+
+      // Broadcast update
+      broadcastUpdate().catch(err => console.error('Broadcast failed:', err))
+
+      toast({ title: "Transaction Undone", description: "Last action reversed" })
+    } catch (error) {
+      console.error('❌ Error undoing transaction:', error)
+      toast({ title: "Error", description: "Failed to undo transaction", variant: "destructive" })
     }
-
-    setTransactions((prev) => prev.slice(0, -1))
-    toast({ title: "Transaction Undone", description: "Last action reversed" })
-  }, [transactions, getPlayerById, getTeamById, toast])
+  }, [transactions, toast, broadcastUpdate])
 
   const resetAuction = useCallback(async () => {
     setSettings(defaultSettings)
