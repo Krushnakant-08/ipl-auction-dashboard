@@ -273,26 +273,17 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       console.log('📥 Fetching fresh team data from database')
       
       try {
-        // Fetch fresh team and teams data from database to ensure we have latest budget
+        // Fetch fresh teams data from database to ensure we have latest budget
         const timestamp = Date.now()
-        const [teamResponse, teamsResponse] = await Promise.all([
-          fetch(`/api/teams?t=${timestamp}`, {
-            cache: 'no-store',
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-            },
-          }),
-          fetch(`/api/teams?t=${timestamp}`, {
-            cache: 'no-store',
-            headers: {
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache',
-            },
-          })
-        ])
+        const teamsResponse = await fetch(`/api/teams?t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        })
 
-        if (!teamResponse.ok || !teamsResponse.ok) {
+        if (!teamsResponse.ok) {
           throw new Error('Failed to fetch team data from database')
         }
 
@@ -359,16 +350,15 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         const updatedTeams = freshTeams.map((t: Team) => t.id === teamId ? savedTeam : t)
         setTeams(updatedTeams)
 
-        // Broadcast update to all connected clients with just the updated team data
+        // Broadcast update to all connected clients asynchronously (non-blocking)
         console.log('📡 Broadcasting update to all clients...')
-        await broadcastUpdate({
+        broadcastUpdate({
           teams: updatedTeams,
           players: players,
           transactions: transactions,
           trades: trades,
           settings: settings,
-        })
-        console.log('✅ Broadcast completed')
+        }).catch(err => console.error('Broadcast failed:', err))
 
         toast({
           title: "Franchise Assigned!",
