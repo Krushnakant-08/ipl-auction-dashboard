@@ -1013,35 +1013,17 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    console.log('🔄 Undoing last transaction - fetching from database')
+    console.log('🔄 Undoing last transaction')
 
     try {
-      // Fetch fresh data from database
-      const [dbTransactionsResponse, dbPlayersResponse, dbTeamsResponse] = await Promise.all([
-        fetch('/api/transactions', { cache: 'no-store' }),
-        fetch('/api/players', { cache: 'no-store' }),
-        fetch('/api/teams', { cache: 'no-store' })
-      ])
-
-      const [dbTransactions, dbPlayers, dbTeams] = await Promise.all([
-        dbTransactionsResponse.json(),
-        dbPlayersResponse.json(),
-        dbTeamsResponse.json()
-      ])
-
-      if (dbTransactions.length === 0) {
-        toast({ title: "No transactions", description: "Nothing to undo", variant: "destructive" })
-        return
-      }
-
-      // Sort transactions by timestamp descending to get the most recent
-      const sortedTransactions = dbTransactions.sort((a: any, b: any) => 
+      // Sort local transactions by timestamp to get the most recent
+      const sortedTransactions = [...transactions].sort((a, b) => 
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
       )
       const lastTxn = sortedTransactions[0]
 
-      const player = dbPlayers.find((p: any) => p.id === lastTxn.playerId)
-      const team = dbTeams.find((t: any) => t.id === lastTxn.soldToTeam)
+      const player = getPlayerById(lastTxn.playerId)
+      const team = getTeamById(lastTxn.soldToTeam)
 
       if (!player || !team) {
         toast({ title: "Error", description: "Player or team not found", variant: "destructive" })
@@ -1053,7 +1035,8 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      let updatedPlayer, updatedTeam
+      let updatedPlayer: Player
+      let updatedTeam: Team
 
       if (lastTxn.type === "sale") {
         // Undo regular sale
@@ -1069,7 +1052,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           remainingBudget: team.remainingBudget + lastTxn.soldPrice,
           squadPlayerIds: (team.squadPlayerIds || []).filter((id: string) => id !== lastTxn.playerId)
         }
-      } else if (lastTxn.type === "rts") {
+      } else {
         // Undo RTS
         updatedTeam = {
           ...team,
@@ -1086,8 +1069,21 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Update database
-      await Promise.all([
+      // Update local state immediately
+      const updatedPlayers = enforceOriginalTeam(
+        players.map((p) => (p.id === updatedPlayer.id ? updatedPlayer : p))
+      )
+      const updatedTeams = teams.map((t) => (t.id === updatedTeam.id ? updatedTeam : t))
+      const updatedTransactions = transactions.filter((t) => t.id !== lastTxn.id)
+
+      setPlayers(updatedPlayers)
+      setTeams(updatedTeams)
+      setTransactions(updatedTransactions)
+
+      toast({ title: "Transaction Undone", description: "Last action reversed" })
+
+      // Update database and broadcast in background (non-blocking)
+      Promise.all([
         fetch('/api/players', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -1101,30 +1097,23 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         fetch(`/api/transactions?id=${lastTxn.id}`, {
           method: 'DELETE'
         })
-      ])
+      ]).then(() => {
+        console.log('✅ Transaction undone - Database updated')
+        // Broadcast update with the already updated data (no need to refetch)
+        return broadcastUpdate({
+          teams: updatedTeams,
+          players: updatedPlayers,
+          transactions: updatedTransactions,
+          trades: trades,
+          settings: settings,
+        })
+      }).catch(err => console.error('Database update failed:', err))
 
-      console.log('✅ Transaction undone - Database updated')
-
-      // Refresh data from database
-      const [newPlayers, newTeams, newTransactions] = await Promise.all([
-        fetch('/api/players').then(r => r.json()),
-        fetch('/api/teams').then(r => r.json()),
-        fetch('/api/transactions').then(r => r.json())
-      ])
-
-      setPlayers(enforceOriginalTeam(newPlayers))
-      setTeams(newTeams)
-      setTransactions(newTransactions)
-
-      // Broadcast update
-      broadcastUpdate().catch(err => console.error('Broadcast failed:', err))
-
-      toast({ title: "Transaction Undone", description: "Last action reversed" })
     } catch (error) {
       console.error('❌ Error undoing transaction:', error)
       toast({ title: "Error", description: "Failed to undo transaction", variant: "destructive" })
     }
-  }, [transactions, toast, broadcastUpdate])
+  }, [transactions, players, teams, trades, settings, getPlayerById, getTeamById, toast, broadcastUpdate])
 
   const resetAuction = useCallback(async () => {
     setSettings(defaultSettings)
