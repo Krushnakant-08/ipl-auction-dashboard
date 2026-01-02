@@ -21,7 +21,6 @@ export interface Player {
   currentTeam: string | null // Current owner
   purchasePrice: number | null
   status: PlayerStatus
-  isStarPlayer?: boolean
 }
 
 export interface Team {

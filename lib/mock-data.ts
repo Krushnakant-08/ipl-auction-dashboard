@@ -1,7 +1,7 @@
 import type { Team, Player, AuctionSettings } from "./types"
 
 export const defaultSettings: AuctionSettings = {
-  initialBudget: 180,
+  initialBudget: 100,
   minSquadSize: 11,
   maxSquadSize: 15,
   currentPhase: "Team Auction",
@@ -155,7 +155,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p223",
@@ -167,7 +166,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p240",
@@ -179,7 +177,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p33",
@@ -191,7 +188,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p197",
@@ -203,7 +199,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p102",
@@ -215,7 +210,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p39",
@@ -227,7 +221,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p76",
@@ -239,7 +232,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p96",
@@ -251,7 +243,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p119",
@@ -263,7 +254,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p23",
@@ -275,7 +265,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p106",
@@ -287,7 +276,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p149",
@@ -299,7 +287,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p14",
@@ -311,7 +298,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p181",
@@ -323,7 +309,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p248",
@@ -335,7 +320,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p78",
@@ -347,7 +331,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p227",
@@ -359,7 +342,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p122",
@@ -371,7 +353,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p9",
@@ -383,7 +364,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p54",
@@ -395,7 +375,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p86",
@@ -407,7 +386,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p42",
@@ -419,7 +397,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p121",
@@ -431,7 +408,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p168",
@@ -443,7 +419,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p112",
@@ -455,7 +430,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p71",
@@ -467,7 +441,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p37",
@@ -479,7 +452,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p146",
@@ -491,7 +463,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p138",
@@ -503,7 +474,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p116",
@@ -515,7 +485,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p35",
@@ -527,7 +496,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p114",
@@ -539,7 +507,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p5",
@@ -551,7 +518,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p161",
@@ -563,7 +529,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p29",
@@ -575,7 +540,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p167",
@@ -587,7 +551,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p221",
@@ -599,7 +562,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p196",
@@ -611,7 +573,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p235",
@@ -623,7 +584,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p80",
@@ -635,7 +595,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p166",
@@ -647,7 +606,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p140",
@@ -659,7 +617,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p88",
@@ -671,7 +628,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p132",
@@ -683,7 +639,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p28",
@@ -695,7 +650,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p145",
@@ -707,7 +661,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p202",
@@ -719,7 +672,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p4",
@@ -731,7 +683,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p184",
@@ -743,7 +694,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p118",
@@ -755,7 +705,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p178",
@@ -767,7 +716,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p47",
@@ -779,7 +727,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p245",
@@ -791,7 +738,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p81",
@@ -803,7 +749,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p56",
@@ -815,7 +760,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p22",
@@ -827,7 +771,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p69",
@@ -839,7 +782,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p134",
@@ -851,7 +793,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p154",
@@ -863,7 +804,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p159",
@@ -875,7 +815,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p234",
@@ -887,7 +826,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p232",
@@ -899,7 +837,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p97",
@@ -911,7 +848,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p230",
@@ -923,7 +859,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p103",
@@ -935,7 +870,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p226",
@@ -947,7 +881,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p70",
@@ -959,7 +892,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p239",
@@ -971,7 +903,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p211",
@@ -983,7 +914,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p224",
@@ -995,7 +925,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p10",
@@ -1007,7 +936,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p62",
@@ -1019,7 +947,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p150",
@@ -1031,7 +958,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p61",
@@ -1043,7 +969,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p244",
@@ -1055,7 +980,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p205",
@@ -1067,7 +991,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p189",
@@ -1079,7 +1002,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p206",
@@ -1091,7 +1013,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p52",
@@ -1103,7 +1024,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p218",
@@ -1115,7 +1035,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p107",
@@ -1127,7 +1046,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p26",
@@ -1139,7 +1057,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p65",
@@ -1151,7 +1068,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p233",
@@ -1163,7 +1079,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p217",
@@ -1175,7 +1090,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p6",
@@ -1187,7 +1101,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p93",
@@ -1199,7 +1112,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p27",
@@ -1211,7 +1123,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p17",
@@ -1223,7 +1134,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p237",
@@ -1235,7 +1145,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p207",
@@ -1247,7 +1156,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p198",
@@ -1259,7 +1167,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p50",
@@ -1271,7 +1178,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p53",
@@ -1283,7 +1189,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p191",
@@ -1295,7 +1200,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p49",
@@ -1307,7 +1211,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p179",
@@ -1319,7 +1222,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p238",
@@ -1331,7 +1233,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p175",
@@ -1343,7 +1244,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p73",
@@ -1355,7 +1255,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p48",
@@ -1367,7 +1266,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p117",
@@ -1379,7 +1277,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p1",
@@ -1391,7 +1288,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p41",
@@ -1403,7 +1299,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p68",
@@ -1415,7 +1310,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p214",
@@ -1427,7 +1321,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p79",
@@ -1439,7 +1332,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p160",
@@ -1451,7 +1343,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p158",
@@ -1463,7 +1354,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p92",
@@ -1475,7 +1365,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p13",
@@ -1487,7 +1376,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p24",
@@ -1499,7 +1387,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p104",
@@ -1511,7 +1398,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p144",
@@ -1523,7 +1409,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p139",
@@ -1535,7 +1420,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p124",
@@ -1547,7 +1431,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p165",
@@ -1559,7 +1442,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p109",
@@ -1571,7 +1453,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p136",
@@ -1583,7 +1464,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p44",
@@ -1595,7 +1475,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p148",
@@ -1607,7 +1486,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p115",
@@ -1619,7 +1497,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p66",
@@ -1631,7 +1508,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p59",
@@ -1643,7 +1519,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p125",
@@ -1655,7 +1530,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p19",
@@ -1667,7 +1541,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p46",
@@ -1679,7 +1552,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p105",
@@ -1691,7 +1563,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p163",
@@ -1703,7 +1574,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p95",
@@ -1715,7 +1585,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p135",
@@ -1727,7 +1596,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p123",
@@ -1739,7 +1607,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p200",
@@ -1751,7 +1618,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p20",
@@ -1763,7 +1629,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p152",
@@ -1775,7 +1640,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p108",
@@ -1787,7 +1651,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p57",
@@ -1799,7 +1662,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p241",
@@ -1811,7 +1673,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p43",
@@ -1823,7 +1684,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p18",
@@ -1835,7 +1695,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p222",
@@ -1847,7 +1706,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p247",
@@ -1859,7 +1717,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p242",
@@ -1871,7 +1728,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p30",
@@ -1883,7 +1739,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p204",
@@ -1895,7 +1750,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p156",
@@ -1907,7 +1761,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p249",
@@ -1919,7 +1772,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p94",
@@ -1931,7 +1783,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p12",
@@ -1943,7 +1794,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p67",
@@ -1955,7 +1805,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p173",
@@ -1967,7 +1816,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p120",
@@ -1979,7 +1827,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p72",
@@ -1991,7 +1838,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p32",
@@ -2003,7 +1849,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p162",
@@ -2015,7 +1860,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p155",
@@ -2027,7 +1871,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p131",
@@ -2039,7 +1882,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p60",
@@ -2051,7 +1893,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p89",
@@ -2063,7 +1904,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p147",
@@ -2075,7 +1915,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p25",
@@ -2087,7 +1926,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p74",
@@ -2099,7 +1937,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p83",
@@ -2111,7 +1948,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p137",
@@ -2123,7 +1959,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p201",
@@ -2135,7 +1970,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p11",
@@ -2147,7 +1981,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p90",
@@ -2159,7 +1992,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p75",
@@ -2171,7 +2003,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p219",
@@ -2183,7 +2014,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p192",
@@ -2195,7 +2025,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p180",
@@ -2207,7 +2036,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p187",
@@ -2219,7 +2047,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p77",
@@ -2231,7 +2058,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p101",
@@ -2243,7 +2069,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p185",
@@ -2255,7 +2080,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p128",
@@ -2267,7 +2091,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p126",
@@ -2279,7 +2102,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p210",
@@ -2291,7 +2113,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p85",
@@ -2303,7 +2124,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p3",
@@ -2315,7 +2135,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p130",
@@ -2327,7 +2146,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p31",
@@ -2339,7 +2157,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p63",
@@ -2351,7 +2168,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p246",
@@ -2363,7 +2179,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p229",
@@ -2375,7 +2190,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p188",
@@ -2387,7 +2201,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p36",
@@ -2399,7 +2212,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p199",
@@ -2411,7 +2223,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p2",
@@ -2423,7 +2234,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p7",
@@ -2435,7 +2245,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p87",
@@ -2447,7 +2256,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p213",
@@ -2459,7 +2267,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p111",
@@ -2471,7 +2278,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p64",
@@ -2483,7 +2289,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p142",
@@ -2495,7 +2300,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p157",
@@ -2507,7 +2311,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p129",
@@ -2519,7 +2322,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p182",
@@ -2531,7 +2333,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p16",
@@ -2543,7 +2344,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p250",
@@ -2555,7 +2355,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p236",
@@ -2567,7 +2366,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p21",
@@ -2579,7 +2377,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p151",
@@ -2591,7 +2388,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p176",
@@ -2603,7 +2399,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p51",
@@ -2615,7 +2410,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p228",
@@ -2627,7 +2421,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p99",
@@ -2639,7 +2432,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p127",
@@ -2651,7 +2443,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p164",
@@ -2663,7 +2454,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p193",
@@ -2675,7 +2465,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p220",
@@ -2687,7 +2476,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p208",
@@ -2699,7 +2487,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        // "isStarPlayer": false
     },
     {
         "id": "p45",
@@ -2711,7 +2498,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p82",
@@ -2723,7 +2509,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p133",
@@ -2735,7 +2520,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p209",
@@ -2747,7 +2531,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p84",
@@ -2759,7 +2542,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p55",
@@ -2771,7 +2553,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p231",
@@ -2783,7 +2564,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p143",
@@ -2795,7 +2575,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p40",
@@ -2807,7 +2586,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p34",
@@ -2819,7 +2597,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p190",
@@ -2831,7 +2608,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p98",
@@ -2843,7 +2619,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p8",
@@ -2855,7 +2630,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p91",
@@ -2867,7 +2641,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p177",
@@ -2879,7 +2652,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p100",
@@ -2891,7 +2663,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p212",
@@ -2903,7 +2674,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p215",
@@ -2915,7 +2685,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p195",
@@ -2927,7 +2696,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p216",
@@ -2939,7 +2707,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p38",
@@ -2951,7 +2718,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p203",
@@ -2963,7 +2729,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p174",
@@ -2975,7 +2740,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p153",
@@ -2987,7 +2751,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p170",
@@ -2999,7 +2762,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p113",
@@ -3011,7 +2773,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p58",
@@ -3023,7 +2784,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p141",
@@ -3035,7 +2795,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p172",
@@ -3047,7 +2806,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p225",
@@ -3059,7 +2817,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p194",
@@ -3071,7 +2828,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p171",
@@ -3083,7 +2839,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p183",
@@ -3095,7 +2850,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": true
     },
     {
         "id": "p186",
@@ -3107,7 +2861,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p169",
@@ -3119,7 +2872,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p15",
@@ -3131,7 +2883,6 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     },
     {
         "id": "p243",
@@ -3143,6 +2894,5 @@ export const mockPlayers: Player[] = [
         "currentTeam": null,
         "purchasePrice": null,
         "status": "Unsold",
-        "isStarPlayer": false
     }
 ]

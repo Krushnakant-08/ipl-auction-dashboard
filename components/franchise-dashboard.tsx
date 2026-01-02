@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DollarSign, Users, TrendingUp, Trophy, Star, Globe } from "lucide-react"
+import { DollarSign, Users, TrendingUp, Trophy, Globe } from "lucide-react"
 import Image from "next/image"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Cell } from "recharts"
 
@@ -207,7 +207,6 @@ export function FranchiseDashboard() {
                         <div className="font-medium">{player.name}</div>
                         <div className="text-xs text-muted-foreground flex items-center gap-2">
                           {player.role}
-                          {player.isStarPlayer && <Star className="h-3 w-3 text-yellow-500 fill-yellow-500" />}
                         </div>
                       </div>
                     </div>
@@ -252,7 +251,6 @@ export function FranchiseDashboard() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{player.name}</span>
-                          {player.isStarPlayer && <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
                         </div>
                       </TableCell>
                       <TableCell>

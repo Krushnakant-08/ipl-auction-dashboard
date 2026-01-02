@@ -10,7 +10,6 @@ const PlayerSchema = new mongoose.Schema({
   currentTeam: { type: String, default: null },
   purchasePrice: { type: Number, default: null },
   status: { type: String, enum: ['Unsold', 'Sold'], default: 'Unsold' },
-  isStarPlayer: { type: Boolean, default: false },
 }, { 
   timestamps: true,
   collection: 'players'
