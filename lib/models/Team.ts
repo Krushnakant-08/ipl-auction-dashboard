@@ -8,6 +8,7 @@ const TeamSchema = new mongoose.Schema({
   remainingBudget: { type: Number, required: true },
   logo: { type: String, default: '' },
   squadPlayerIds: [{ type: String }],
+  startingXI: { type: [String], default: [] },
   rtmUsed: { type: Boolean, default: false },
   rtsUsed: { type: Boolean, default: false },
   teamAuctionComplete: { type: Boolean, default: false },
