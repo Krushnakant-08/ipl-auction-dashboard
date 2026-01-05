@@ -720,7 +720,8 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return { can: false, reason: "Player must be sold first" }
       }
 
-      if (player.originalTeam !== teamId) {
+      // Check if player was originally from this team (compare by franchise name)
+      if (player.originalTeam !== team.franchiseName) {
         return { can: false, reason: "Player was not originally from this team" }
       }
 

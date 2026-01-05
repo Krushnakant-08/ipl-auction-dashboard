@@ -8,15 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
-import { Users, DollarSign, Globe, RefreshCw } from "lucide-react"
+import { Users, DollarSign, Globe, RefreshCw, Shield } from "lucide-react"
 import { useState } from "react"
 import { RTSDialog } from "@/components/rts-dialog"
+import { RTMSquadDialog } from "@/components/rtm-squad-dialog"
 import { Button } from "@/components/ui/button"
 
 export default function SquadsPage() {
-  const { teams, getTeamPlayers, canUseRTS } = useAuction()
+  const { teams, getTeamPlayers, canUseRTS, players } = useAuction()
   const { user } = useAuth()
   const [rtsTeamId, setRtsTeamId] = useState<string | null>(null)
+  const [rtmTeamId, setRtmTeamId] = useState<string | null>(null)
 
   // Filter teams based on user role
   const visibleTeams = user?.role === "admin" ? teams : teams.filter((t) => t.id === user?.teamId)
@@ -25,6 +27,7 @@ export default function SquadsPage() {
     <div className="min-h-screen bg-background">
       <Navigation />
       <RTSDialog teamId={rtsTeamId} open={!!rtsTeamId} onClose={() => setRtsTeamId(null)} />
+      <RTMSquadDialog teamId={rtmTeamId} open={!!rtmTeamId} onClose={() => setRtmTeamId(null)} />
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">
@@ -69,22 +72,40 @@ export default function SquadsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-2xl font-bold">{team.franchiseName || team.groupName}</h2>
-                    {team.rtsUsed && (
-                      <Badge variant="outline" className="mt-1">
-                        RTS Used
-                      </Badge>
-                    )}
+                    <div className="flex gap-2 mt-1">
+                      {team.rtsUsed && (
+                        <Badge variant="outline">
+                          RTS Used
+                        </Badge>
+                      )}
+                      {team.rtmUsed && (
+                        <Badge variant="outline">
+                          RTM Used
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   {user?.role === "admin" && (
-                    <Button
-                      onClick={() => setRtsTeamId(team.id)}
-                      disabled={!rtsValidation.can}
-                      variant="outline"
-                      size="lg"
-                    >
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Use RTS
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={() => setRtsTeamId(team.id)}
+                        disabled={!rtsValidation.can}
+                        variant="outline"
+                        size="lg"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Use RTS
+                      </Button>
+                      <Button
+                        onClick={() => setRtmTeamId(team.id)}
+                        disabled={team.rtmUsed}
+                        variant="outline"
+                        size="lg"
+                      >
+                        <Shield className="h-4 w-4 mr-2" />
+                        Use RTM
+                      </Button>
+                    </div>
                   )}
                 </div>
 
