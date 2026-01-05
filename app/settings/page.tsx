@@ -32,7 +32,6 @@ export default function SettingsPage() {
     maxSquadSize: settings.maxSquadSize,
   })
   const [isSaving, setIsSaving] = useState(false)
-  const [isResettingBudgets, setIsResettingBudgets] = useState(false)
 
   const handleVerifyDatabase = async () => {
     try {
@@ -91,63 +90,6 @@ export default function SettingsPage() {
     }
   }
 
-  const handleResetBudgets = async () => {
-    if (!confirm(`Reset all teams to ₹${localSettings.initialBudget} Cr? This will clear franchise assignments!`)) {
-      return
-    }
-    
-    setIsResettingBudgets(true)
-    try {
-      // First, save the new budget to settings
-      await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(localSettings),
-      })
-      
-      // Get all teams from database
-      const teamsResponse = await fetch('/api/teams')
-      const teams = await teamsResponse.json()
-      
-      // Reset each team directly in database
-      await Promise.all(
-        teams.map((team: any) =>
-          fetch('/api/teams', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...team,
-              remainingBudget: localSettings.initialBudget,
-              franchiseId: null,
-              franchiseName: null,
-              franchiseAmount: 0,
-              franchiseBid: 0,
-              teamAuctionComplete: false,
-            }),
-          })
-        )
-      )
-      
-      toast({
-        title: "Success",
-        description: `All teams reset to ₹${localSettings.initialBudget} Cr. Reloading...`,
-      })
-      
-      // Force a complete reload with cache bypass
-      setTimeout(() => {
-        window.location.reload()
-      }, 1000)
-    } catch (error) {
-      console.error('Reset error:', error)
-      toast({
-        title: "Error",
-        description: "Failed to reset budgets",
-        variant: "destructive",
-      })
-      setIsResettingBudgets(false)
-    }
-  }
-
   const handleSaveSettings = async () => {
     setIsSaving(true)
     try {
@@ -169,7 +111,7 @@ export default function SettingsPage() {
 
       toast({
         title: "Settings Saved",
-        description: `Budget set to ₹${localSettings.initialBudget} Cr. Use "Reset All Team Budgets" to apply to existing teams.`,
+        description: `Budget set to ₹${localSettings.initialBudget} Cr.`,
       })
     } catch (error) {
       console.error('Save error:', error)
@@ -264,33 +206,6 @@ export default function SettingsPage() {
                   <Save className="h-4 w-4" />
                   {isSaving ? "Saving..." : "Save Settings"}
                 </Button>
-              </div>
-
-              <div className="pt-4 border-t space-y-3">
-                <div className="bg-yellow-50 dark:bg-yellow-950 p-3 rounded-md">
-                  <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
-                    ⚠️ To Change Budget for Existing Teams:
-                  </p>
-                  <ol className="text-xs text-yellow-700 dark:text-yellow-300 list-decimal list-inside space-y-1">
-                    <li>Change the "Initial Budget" value above</li>
-                    <li>Click "Save Settings"</li>
-                    <li>Then click "Reset All Team Budgets" below</li>
-                    <li>Wait for the page to refresh</li>
-                  </ol>
-                </div>
-                
-                <Button 
-                  onClick={handleResetBudgets} 
-                  disabled={isResettingBudgets}
-                  variant="destructive"
-                  className="gap-2 w-full"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  {isResettingBudgets ? "Resetting..." : `Reset All Team Budgets to ₹${localSettings.initialBudget} Cr`}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  ⚠️ This will reset all teams and clear franchise assignments
-                </p>
               </div>
             </CardContent>
           </Card>
