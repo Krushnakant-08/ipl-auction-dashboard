@@ -1,6 +1,6 @@
 export type PlayerRole = "Batsman" | "Bowler" | "All-rounder" | "Wk/Batsman"
 export type PlayerStatus = "Unsold" | "Sold"
-export type AuctionPhase = "Team Auction" | "Player Auction" | "Trading Window" | "Finalization"
+export type AuctionPhase = "Pre-Auction" | "Team Auction" | "Player Auction" | "Trading Window" | "Finalization"
 export type UserRole = "admin" | "franchise"
 export type TradeStatus = "Pending" | "Accepted" | "Rejected" | "Cancelled"
 
@@ -31,6 +31,7 @@ export interface Team {
   remainingBudget: number // 100 - franchiseBid
   logo: string
   squadPlayerIds: string[]
+  startingXI: string[] // Top 11 players selected by franchise
   rtmUsed: boolean
   rtsUsed: boolean
   teamAuctionComplete: boolean

@@ -12,13 +12,15 @@ import { Users, DollarSign, Globe, RefreshCw, Shield } from "lucide-react"
 import { useState } from "react"
 import { RTSDialog } from "@/components/rts-dialog"
 import { RTMSquadDialog } from "@/components/rtm-squad-dialog"
+import { StartingXISelector } from "@/components/starting-xi-selector"
 import { Button } from "@/components/ui/button"
 
 export default function SquadsPage() {
-  const { teams, getTeamPlayers, canUseRTS, players } = useAuction()
+  const { teams, getTeamPlayers, canUseRTS, players, settings } = useAuction()
   const { user } = useAuth()
   const [rtsTeamId, setRtsTeamId] = useState<string | null>(null)
   const [rtmTeamId, setRtmTeamId] = useState<string | null>(null)
+  const [startingXITeamId, setStartingXITeamId] = useState<string | null>(null)
 
   // Filter teams based on user role
   const visibleTeams = user?.role === "admin" ? teams : teams.filter((t) => t.id === user?.teamId)
@@ -28,6 +30,9 @@ export default function SquadsPage() {
       <Navigation />
       <RTSDialog teamId={rtsTeamId} open={!!rtsTeamId} onClose={() => setRtsTeamId(null)} />
       <RTMSquadDialog teamId={rtmTeamId} open={!!rtmTeamId} onClose={() => setRtmTeamId(null)} />
+      {startingXITeamId && (
+        <StartingXISelector teamId={startingXITeamId} open={true} onClose={() => setStartingXITeamId(null)} />
+      )}
       <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-foreground">
@@ -85,28 +90,43 @@ export default function SquadsPage() {
                       )}
                     </div>
                   </div>
-                  {user?.role === "admin" && (
-                    <div className="flex gap-2">
+                  <div className="flex gap-2">
+                    {user?.role === "admin" && (
+                      <>
+                        <Button
+                          onClick={() => setRtsTeamId(team.id)}
+                          disabled={!rtsValidation.can}
+                          variant="outline"
+                          size="lg"
+                        >
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Use RTS
+                        </Button>
+                        <Button
+                          onClick={() => setRtmTeamId(team.id)}
+                          disabled={team.rtmUsed}
+                          variant="outline"
+                          size="lg"
+                        >
+                          <Shield className="h-4 w-4 mr-2" />
+                          Use RTM
+                        </Button>
+                      </>
+                    )}
+                    {/* Starting XI button available after trading window ends */}
+                    {(settings.currentPhase === "Finalization" || team.startingXI.length > 0) && 
+                     (user?.role === "franchise" && user?.teamId === team.id || user?.role === "admin") && (
                       <Button
-                        onClick={() => setRtsTeamId(team.id)}
-                        disabled={!rtsValidation.can}
-                        variant="outline"
+                        onClick={() => setStartingXITeamId(team.id)}
+                        disabled={teamPlayers.length < 11}
+                        variant={team.startingXI.length === 11 ? "default" : "outline"}
                         size="lg"
                       >
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Use RTS
+                        <Users className="h-4 w-4 mr-2" />
+                        {team.startingXI.length === 11 ? "Edit" : "Select"} Starting XI
                       </Button>
-                      <Button
-                        onClick={() => setRtmTeamId(team.id)}
-                        disabled={team.rtmUsed}
-                        variant="outline"
-                        size="lg"
-                      >
-                        <Shield className="h-4 w-4 mr-2" />
-                        Use RTM
-                      </Button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

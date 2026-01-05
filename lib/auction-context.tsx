@@ -49,6 +49,10 @@ interface AuctionContextType {
   useRTS: (playerId: string, teamId: string) => Promise<boolean>
   canUseRTS: (teamId: string) => { can: boolean; reason?: string }
 
+  // Starting XI
+  submitStartingXI: (teamId: string, playerIds: string[]) => Promise<boolean>
+  startFinalization: () => Promise<void>
+
   // Utilities
   getTeamById: (teamId: string) => Team | undefined
   getPlayerById: (playerId: string) => Player | undefined
@@ -1179,7 +1183,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         initialBudget: settings.initialBudget,
         minSquadSize: settings.minSquadSize,
         maxSquadSize: settings.maxSquadSize,
-        currentPhase: "Pre-Auction" as const,
+        currentPhase: "Finalization" as const,
         tradingWindowEnd: null
       }
 
@@ -1202,7 +1206,7 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
 
       toast({
         title: "Trading Window Closed",
-        description: "The trading window has been closed successfully"
+        description: "Teams can now submit their Starting XI"
       })
     } catch (error) {
       console.error('❌ Error ending trading window:', error)
@@ -1563,6 +1567,105 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [trades, toast, broadcastUpdate])
 
+  // Starting XI: Submit starting XI
+  const submitStartingXI = useCallback(async (teamId: string, playerIds: string[]) => {
+    try {
+      if (playerIds.length !== 11) {
+        toast({ title: "Invalid Selection", description: "Must select exactly 11 players", variant: "destructive" })
+        return false
+      }
+
+      const team = getTeamById(teamId)
+      if (!team) {
+        toast({ title: "Error", description: "Team not found", variant: "destructive" })
+        return false
+      }
+
+      // Verify all players belong to this team
+      const invalidPlayers = playerIds.filter(pid => !team.squadPlayerIds.includes(pid))
+      if (invalidPlayers.length > 0) {
+        toast({ title: "Error", description: "Selected players must be from your squad", variant: "destructive" })
+        return false
+      }
+
+      console.log('🔄 Submitting Starting XI - updating database')
+
+      // Update team in database
+      const updatedTeam = {
+        ...team,
+        startingXI: playerIds
+      }
+
+      const response = await fetch('/api/teams', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTeam),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update team in database')
+      }
+
+      const savedTeam = await response.json()
+      console.log('✅ Starting XI submitted - Database updated:', savedTeam)
+
+      // Update local state
+      setTeams(prev => prev.map(t => t.id === teamId ? savedTeam : t))
+
+      // Broadcast update
+      await broadcastUpdate()
+
+      toast({
+        title: "Starting XI Submitted!",
+        description: `Your top 11 players have been saved`
+      })
+
+      return true
+    } catch (error) {
+      console.error('❌ Error submitting starting XI:', error)
+      toast({ title: "Error", description: "Failed to submit starting XI", variant: "destructive" })
+      return false
+    }
+  }, [getTeamById, toast, broadcastUpdate])
+
+  // Start Finalization Phase
+  const startFinalization = useCallback(async () => {
+    try {
+      const newSettings = {
+        initialBudget: settings.initialBudget,
+        minSquadSize: settings.minSquadSize,
+        maxSquadSize: settings.maxSquadSize,
+        currentPhase: "Finalization" as const,
+        tradingWindowEnd: null
+      }
+
+      // Save to database
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update settings')
+      }
+
+      const savedSettings = await response.json()
+      setSettings(savedSettings)
+
+      // Broadcast update
+      await broadcastUpdate()
+
+      toast({
+        title: "Finalization Phase Started",
+        description: "Teams can now submit their Starting XI"
+      })
+    } catch (error) {
+      console.error('❌ Error starting finalization:', error)
+      toast({ title: "Error", description: "Failed to start finalization phase", variant: "destructive" })
+    }
+  }, [settings, toast, broadcastUpdate])
+
   return (
     <AuctionContext.Provider
       value={{
@@ -1585,6 +1688,8 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         canUseRTM,
         useRTS,
         canUseRTS,
+        submitStartingXI,
+        startFinalization,
         getTeamById,
         getPlayerById,
         getTeamPlayers,

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Users, ListFilter, Gavel, Trophy, Settings, LogOut, User, ArrowLeftRight } from "lucide-react"
+import { LayoutDashboard, Users, ListFilter, Gavel, Trophy, Settings, LogOut, User, ArrowLeftRight, Shield } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +15,7 @@ const navItems = [
   { name: "Player Pool", href: "/players", icon: ListFilter, roles: ["admin"] },
   { name: "Squad View", href: "/squads", icon: Trophy, roles: ["admin", "franchise"] },
   { name: "Trading", href: "/trading", icon: ArrowLeftRight, roles: ["admin", "franchise"] },
+  { name: "Starting XI", href: "/starting-xi", icon: Shield, roles: ["admin", "franchise"] },
   { name: "Settings", href: "/settings", icon: Settings, roles: ["admin"] },
 ]
 
