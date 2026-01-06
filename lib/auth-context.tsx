@@ -16,19 +16,19 @@ interface AuthContextType {
   canAccessRoute: (path: string) => boolean
 }
 
-// Passwords - In production, use environment variables and proper authentication
-const ADMIN_PASSWORD = "admin123"
+// Passwords - Now using environment variables
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "admin123"
 
 // Individual franchise passwords (teamId: password)
 const FRANCHISE_PASSWORDS: Record<string, string> = {
-  t1: "alpha123",      // Group Alpha
-  t2: "beta123",       // Group Beta
-  t3: "gamma123",      // Group Gamma
-  t4: "delta123",      // Group Delta
-  t5: "epsilon123",    // Group Epsilon
-  t6: "zeta123",       // Group Zeta
-  t7: "eta123",        // Group Eta
-  t8: "theta123",      // Group Theta
+  t1: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T1 || "alpha123",      // Group Alpha
+  t2: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T2 || "beta123",       // Group Beta
+  t3: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T3 || "gamma123",      // Group Gamma
+  t4: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T4 || "delta123",      // Group Delta
+  t5: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T5 || "epsilon123",    // Group Epsilon
+  t6: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T6 || "zeta123",       // Group Zeta
+  t7: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T7 || "eta123",        // Group Eta
+  t8: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T8 || "theta123",      // Group Theta
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
