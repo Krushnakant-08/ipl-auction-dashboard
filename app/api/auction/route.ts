@@ -9,29 +9,52 @@ import Trade from '@/lib/models/Trade'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// Cache to reduce database queries
+let cachedData: any = null
+let lastCacheTime = 0
+const CACHE_DURATION = 1000 // 1 second cache
+
 export async function GET() {
   try {
+    // Return cached data if still fresh
+    const now = Date.now()
+    if (cachedData && (now - lastCacheTime) < CACHE_DURATION) {
+      return NextResponse.json(cachedData, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'X-Cache': 'HIT',
+        },
+      })
+    }
+    
     await connectDB()
     
+    // Use lean() for better performance - returns plain objects instead of Mongoose documents
     const [teams, players, settings, transactions, trades] = await Promise.all([
-      Team.find({}),
-      Player.find({}),
-      Settings.findOne({}),
-      Transaction.find({}).sort({ timestamp: -1 }),
-      Trade.find({}).sort({ proposedAt: -1 }),
+      Team.find({}).lean(),
+      Player.find({}).lean(),
+      Settings.findOne({}).lean(),
+      Transaction.find({}).sort({ timestamp: -1 }).limit(100).lean(),
+      Trade.find({}).sort({ proposedAt: -1 }).limit(50).lean(),
     ])
 
-    return NextResponse.json({
+    // Update cache
+    cachedData = {
       settings: settings || null,
       teams: teams || [],
       players: players || [],
       transactions: transactions || [],
       trades: trades || [],
       lastUpdate: Date.now(),
-    }, {
+    }
+    lastCacheTime = now
+    
+    return NextResponse.json(cachedData, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
         'Pragma': 'no-cache',
+        'X-Cache': 'MISS',
       },
     })
   } catch (error) {
@@ -88,6 +111,10 @@ export async function POST(request: NextRequest) {
         )
       )
     }
+    
+    // Invalidate cache when data is updated
+    cachedData = null
+    lastCacheTime = 0
     
     // Only log significant changes
     if (data.settings?.currentPhase) {

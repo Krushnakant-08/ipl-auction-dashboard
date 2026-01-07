@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Gavel, User, DollarSign, TrendingUp, RotateCcw, AlertCircle, Building2, Play } from "lucide-react"
+import { Gavel, User, DollarSign, TrendingUp, RotateCcw, AlertCircle, Building2, Play, ListX } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RTMDialog } from "@/components/rtm-dialog"
 
@@ -39,6 +39,9 @@ export default function AuctionPage() {
   // RTM dialog state
   const [rtmPlayerId, setRtmPlayerId] = useState<string | null>(null)
   const [rtmOriginalTeamId, setRtmOriginalTeamId] = useState<string | null>(null)
+
+  // Unsold players state
+  const [markingUnsold, setMarkingUnsold] = useState(false)
 
   const unsoldPlayers = useMemo(() => players.filter((p) => p.status === "Unsold"), [players])
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId)
@@ -76,6 +79,37 @@ export default function AuctionPage() {
       console.log('✅ Player auction started successfully')
     } catch (error) {
       console.error('❌ Failed to start player auction:', error)
+    }
+  }
+
+  const handleMarkAsUnsold = async () => {
+    if (!selectedPlayerId) {
+      return
+    }
+
+    setMarkingUnsold(true)
+    try {
+      const response = await fetch('/api/unsold-players', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', playerId: selectedPlayerId }),
+      })
+      
+      if (response.ok) {
+        console.log(`✅ Player marked as unsold`)
+        // Clear selection after marking as unsold
+        setSelectedPlayerId('')
+        setSoldPrice('')
+      } else {
+        const data = await response.json()
+        console.error('❌ Failed to mark as unsold:', data.error)
+        alert(`Failed to mark as unsold: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('❌ Error marking as unsold:', error)
+      alert('Error marking player as unsold')
+    } finally {
+      setMarkingUnsold(false)
     }
   }
 
@@ -362,6 +396,15 @@ export default function AuctionPage() {
                   <CardDescription>Select player, team, and confirm the sale</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-6">
+                  {unsoldPlayers.length === 0 && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>
+                        No unsold players available
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  
                   {/* Player Selection */}
                   <div className="space-y-2">
                     <Label htmlFor="player" className="flex items-center gap-2">
@@ -488,11 +531,26 @@ export default function AuctionPage() {
                     )}
                   </div>
 
-                  {/* Confirm Button */}
-                  <Button onClick={handleConfirmSale} disabled={!canConfirmSale} className="w-full" size="lg">
-                    <Gavel className="h-4 w-4 mr-2" />
-                    Confirm Sale
-                  </Button>
+                  {/* Action Buttons */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      onClick={handleMarkAsUnsold} 
+                      disabled={!selectedPlayerId || markingUnsold}
+                      variant="destructive"
+                      size="lg"
+                    >
+                      <ListX className="h-4 w-4 mr-2" />
+                      {markingUnsold ? 'Marking...' : 'Mark Unsold'}
+                    </Button>
+                    <Button 
+                      onClick={handleConfirmSale} 
+                      disabled={!canConfirmSale} 
+                      size="lg"
+                    >
+                      <Gavel className="h-4 w-4 mr-2" />
+                      Confirm Sale
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
 
