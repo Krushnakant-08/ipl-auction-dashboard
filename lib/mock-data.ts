@@ -2,8 +2,8 @@ import type { Team, Player, AuctionSettings } from "./types"
 
 export const defaultSettings: AuctionSettings = {
   initialBudget: 120,
-  minSquadSize: 11,
-  maxSquadSize: 15,
+  minSquadSize: 13,
+  maxSquadSize: 16,
   currentPhase: "Team Auction",
 }
 
