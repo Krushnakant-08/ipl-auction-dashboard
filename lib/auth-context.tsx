@@ -29,6 +29,8 @@ const FRANCHISE_PASSWORDS: Record<string, string> = {
   t6: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T6 || "zeta123",       // Group Zeta
   t7: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T7 || "eta123",        // Group Eta
   t8: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T8 || "theta123",      // Group Theta
+  t9: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T9 || "iota123",       // Group Iota
+  t10: process.env.NEXT_PUBLIC_FRANCHISE_PASSWORD_T10 || "kappa123",    // Group Kappa
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
