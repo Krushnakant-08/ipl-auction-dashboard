@@ -1179,6 +1179,27 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
   // Trading Window: End trading window
   const endTradingWindow = useCallback(async () => {
     try {
+      // First, cancel all pending trades
+      try {
+        const cancelResponse = await fetch('/api/trades/cancel-pending', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        })
+        
+        if (cancelResponse.ok) {
+          const cancelData = await cancelResponse.json()
+          console.log(`✅ Cancelled ${cancelData.count} pending trades`)
+          if (cancelData.count > 0) {
+            toast({
+              title: "Pending Trades Cancelled",
+              description: `${cancelData.count} pending trade(s) were automatically cancelled`,
+            })
+          }
+        }
+      } catch (error) {
+        console.error('⚠️ Error cancelling pending trades:', error)
+      }
+      
       const newSettings = {
         initialBudget: settings.initialBudget,
         minSquadSize: settings.minSquadSize,
@@ -1309,7 +1330,13 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save trade to database')
+        const errorData = await response.json().catch(() => ({ error: 'Failed to save trade' }))
+        toast({ 
+          title: "Error", 
+          description: errorData.error || 'Failed to propose trade', 
+          variant: "destructive" 
+        })
+        return false
       }
 
       const savedTrade = await response.json()

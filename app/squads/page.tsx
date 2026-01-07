@@ -113,17 +113,18 @@ export default function SquadsPage() {
                         </Button>
                       </>
                     )}
-                    {/* Starting XI button available after trading window ends */}
+                    {/* Starting XI button - available during Finalization phase */}
                     {(settings.currentPhase === "Finalization" || team.startingXI.length > 0) && 
                      (user?.role === "franchise" && user?.teamId === team.id || user?.role === "admin") && (
                       <Button
                         onClick={() => setStartingXITeamId(team.id)}
-                        disabled={teamPlayers.length < 11}
+                        disabled={teamPlayers.length === 0}
                         variant={team.startingXI.length === 11 ? "default" : "outline"}
                         size="lg"
                       >
                         <Users className="h-4 w-4 mr-2" />
                         {team.startingXI.length === 11 ? "Edit" : "Select"} Starting XI
+                        {teamPlayers.length < 11 && ` (${teamPlayers.length}/11)`}
                       </Button>
                     )}
                   </div>

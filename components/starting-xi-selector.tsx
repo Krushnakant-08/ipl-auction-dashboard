@@ -32,11 +32,11 @@ export function StartingXISelector({ teamId, open, onClose }: StartingXISelector
   const squadPlayers = getTeamPlayers(teamId)
 
   useEffect(() => {
-    if (open && team) {
-      // Pre-populate with existing starting XI if available
+    if (open && team && selectedPlayers.length === 0) {
+      // Pre-populate with existing starting XI only when opening with empty selection
       setSelectedPlayers(team.startingXI || [])
     }
-  }, [open, team])
+  }, [open, teamId])
 
   const handleTogglePlayer = (playerId: string) => {
     setSelectedPlayers(prev => {

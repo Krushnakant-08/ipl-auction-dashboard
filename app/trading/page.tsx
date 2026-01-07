@@ -46,6 +46,12 @@ export default function TradingPage() {
   }, [])
 
   const isTradingActive = settings.currentPhase === "Trading Window"
+  const isWindowExpired = useMemo(() => {
+    if (!settings.tradingWindowEnd) return false
+    const end = new Date(settings.tradingWindowEnd)
+    return end.getTime() <= currentTime
+  }, [settings.tradingWindowEnd, currentTime])
+  
   const timeRemaining = useMemo(() => {
     if (!settings.tradingWindowEnd) return null
     const end = new Date(settings.tradingWindowEnd)
@@ -199,10 +205,19 @@ export default function TradingPage() {
             </AlertDescription>
           </Alert>
         )}
+        
+        {isTradingActive && isWindowExpired && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Trading window has expired. No new trades can be proposed. {isAdmin() && "Click 'End Trading Window' to finalize."}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Propose Trade */}
-          {isFranchise() && isTradingActive && userTeam && (
+          {isFranchise() && isTradingActive && !isWindowExpired && userTeam && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -305,11 +320,11 @@ export default function TradingPage() {
 
                 <Button
                   onClick={handleProposeTrade}
-                  disabled={!selectedTeam || offeredPlayers.length === 0 || requestedPlayers.length === 0}
+                  disabled={!selectedTeam || offeredPlayers.length === 0 || requestedPlayers.length === 0 || isWindowExpired}
                   className="w-full"
                   size="lg"
                 >
-                  Propose Trade
+                  {isWindowExpired ? 'Window Expired' : 'Propose Trade'}
                 </Button>
               </CardContent>
             </Card>
