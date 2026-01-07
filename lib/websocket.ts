@@ -81,30 +81,39 @@ export class AuctionWebSocket {
     this.usePolling = true
     console.log('🔄 Using polling for real-time updates')
     
-    // Poll every 2 seconds
+    // Poll every 3 seconds to reduce database load
     this.pollingInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/auction?t=${Date.now()}`, {
+        // First, check if data has changed using lightweight sync endpoint
+        const syncResponse = await fetch(`/api/auction/sync?t=${Date.now()}`, {
           cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-          },
         })
         
-        if (response.ok) {
-          const data = await response.json()
-          // Only trigger callback if data has changed
-          if (data.lastUpdate && data.lastUpdate !== this.lastUpdate) {
-            this.lastUpdate = data.lastUpdate
-            if (this.onUpdateCallback) {
-              this.onUpdateCallback(data)
+        if (syncResponse.ok) {
+          const syncData = await syncResponse.json()
+          
+          // Only fetch full data if lastUpdate has changed
+          if (syncData.lastUpdate && syncData.lastUpdate !== this.lastUpdate) {
+            const response = await fetch(`/api/auction?t=${Date.now()}`, {
+              cache: 'no-store',
+              headers: {
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+              },
+            })
+            
+            if (response.ok) {
+              const data = await response.json()
+              this.lastUpdate = syncData.lastUpdate
+              if (this.onUpdateCallback) {
+                this.onUpdateCallback(data)
+              }
             }
           }
         }
       } catch (error) {
         console.error('Polling error:', error)
       }
-    }, 2000)
+    }, 3000)
   }
 
   private stopPolling() {
