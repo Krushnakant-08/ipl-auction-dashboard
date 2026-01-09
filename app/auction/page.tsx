@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useAuction } from "@/lib/auction-context"
 import { Navigation } from "@/components/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,8 +12,10 @@ import { Badge } from "@/components/ui/badge"
 import { Gavel, User, DollarSign, TrendingUp, RotateCcw, AlertCircle, Building2, Play, ListX } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { RTMDialog } from "@/components/rtm-dialog"
+import { useToast } from "@/hooks/use-toast"
 
 export default function AuctionPage() {
+  const { toast } = useToast()
   const {
     settings,
     players,
@@ -42,10 +44,54 @@ export default function AuctionPage() {
 
   // Unsold players state
   const [markingUnsold, setMarkingUnsold] = useState(false)
+  const [unsoldPlayersWithTimestamp, setUnsoldPlayersWithTimestamp] = useState<Array<{id: string, playerId: string, timestamp: string}>>([])  
+  
+  // Selected transaction for undo
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
 
   const unsoldPlayers = useMemo(() => players.filter((p) => p.status === "Unsold"), [players])
   const selectedPlayer = players.find((p) => p.id === selectedPlayerId)
   const selectedTeam = teams.find((t) => t.id === selectedTeamId)
+
+  const isTeamAuctionPhase = settings.currentPhase === "Team Auction"
+  const isPlayerAuctionPhase = settings.currentPhase === "Player Auction"
+
+  // Fetch unsold players with timestamps
+  const fetchUnsoldPlayersWithTimestamp = async () => {
+    try {
+      const response = await fetch('/api/unsold-players')
+      if (response.ok) {
+        const data = await response.json()
+        setUnsoldPlayersWithTimestamp(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch unsold players:', error)
+    }
+  }
+
+  // Fetch on mount and when phase changes
+  useEffect(() => {
+    if (isPlayerAuctionPhase) {
+      fetchUnsoldPlayersWithTimestamp()
+    }
+  }, [isPlayerAuctionPhase])
+
+  // Sort unsold players by timestamp (most recent first)
+  const sortedUnsoldPlayers = useMemo(() => {
+    if (unsoldPlayersWithTimestamp.length === 0) {
+      return unsoldPlayers
+    }
+    
+    return [...unsoldPlayers].sort((a, b) => {
+      const aData = unsoldPlayersWithTimestamp.find(u => u.playerId === a.id)
+      const bData = unsoldPlayersWithTimestamp.find(u => u.playerId === b.id)
+      
+      if (!aData) return 1
+      if (!bData) return -1
+      
+      return new Date(bData.timestamp).getTime() - new Date(aData.timestamp).getTime()
+    })
+  }, [unsoldPlayers, unsoldPlayersWithTimestamp])
 
   const teamsWithoutFranchise = teams.filter((t) => !t.teamAuctionComplete)
   const assignedFranchiseIds = teams.filter((t) => t.teamAuctionComplete).map((t) => t.franchiseName)
@@ -97,6 +143,8 @@ export default function AuctionPage() {
       
       if (response.ok) {
         console.log(`✅ Player marked as unsold`)
+        // Refresh unsold players list to show new player at top
+        await fetchUnsoldPlayersWithTimestamp()
         // Clear selection after marking as unsold
         setSelectedPlayerId('')
         setSoldPrice('')
@@ -110,6 +158,107 @@ export default function AuctionPage() {
       alert('Error marking player as unsold')
     } finally {
       setMarkingUnsold(false)
+    }
+  }
+
+  const handleUndoTransaction = async (transactionId: string) => {
+    const txn = transactions.find(t => t.id === transactionId)
+    if (!txn) {
+      alert('Transaction not found')
+      return
+    }
+
+    if (txn.type === "rtm" || txn.type === "rts") {
+      alert('Cannot undo RTM/RTS transactions')
+      return
+    }
+
+    const player = players.find(p => p.id === txn.playerId)
+    const team = teams.find(t => t.id === txn.soldToTeam)
+
+    if (!player || !team) {
+      alert('Player or team not found')
+      return
+    }
+
+    if (!confirm(`Undo transaction: ${player.name} sold to ${team.franchiseName || team.groupName} for ₹${txn.soldPrice} Cr?\n\nThis will:\n- Return player to Unsold status\n- Refund ₹${txn.soldPrice} Cr to team\n- Remove player from squad\n- Delete transaction record`)) {
+      return
+    }
+
+    try {
+      console.log('🔄 Starting transaction reversal...')
+      console.log('📊 Current state:', {
+        playerStatus: player.status,
+        teamBudget: team.remainingBudget,
+        squadSize: team.squadPlayerIds?.length || 0
+      })
+
+      // Step 1: Delete the transaction from database
+      const deleteResponse = await fetch(`/api/transactions?id=${transactionId}`, {
+        method: 'DELETE',
+      })
+
+      if (!deleteResponse.ok) {
+        const error = await deleteResponse.json()
+        throw new Error(error.error || 'Failed to delete transaction')
+      }
+      console.log('✅ Transaction deleted from database')
+
+      // Step 2: Revert player to Unsold status (as if never auctioned)
+      const updatedPlayer = {
+        ...player,
+        status: 'Unsold' as const,
+        currentTeam: null,
+        currentTeamName: null,
+        purchasePrice: null
+      }
+
+      const playerResponse = await fetch('/api/players', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPlayer)
+      })
+
+      if (!playerResponse.ok) {
+        throw new Error('Failed to update player status')
+      }
+      const savedPlayer = await playerResponse.json()
+      console.log('✅ Player reverted to Unsold status')
+
+      // Step 3: Restore team budget and remove player from squad
+      const updatedTeam = {
+        ...team,
+        remainingBudget: team.remainingBudget + txn.soldPrice,
+        squadPlayerIds: (team.squadPlayerIds || []).filter((id: string) => id !== txn.playerId)
+      }
+
+      const teamResponse = await fetch('/api/teams', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTeam)
+      })
+
+      if (!teamResponse.ok) {
+        throw new Error('Failed to update team')
+      }
+      const savedTeam = await teamResponse.json()
+      console.log('✅ Team budget restored and player removed from squad')
+      console.log('💰 New budget:', savedTeam.remainingBudget.toFixed(1), 'Cr')
+      console.log('👥 New squad size:', savedTeam.squadPlayerIds?.length || 0)
+
+      // Step 4: Broadcast sync to all clients
+      await fetch('/api/auction/sync', { method: 'POST' })
+      console.log('✅ Changes synced to all clients')
+
+      setSelectedTransactionId(null)
+      
+      toast({
+        title: "Transaction Reversed",
+        description: `${player.name} returned to unsold players. ₹${txn.soldPrice} Cr refunded to ${team.franchiseName || team.groupName}.`
+      })
+    } catch (error) {
+      console.error('❌ Error reversing transaction:', error)
+      alert(`Failed to reverse transaction: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
@@ -143,11 +292,8 @@ export default function AuctionPage() {
   const canConfirmSale = selectedPlayerId && selectedTeamId && soldPrice && Number.parseFloat(soldPrice) > 0
 
   const recentTransactions = useMemo(() => {
-    return transactions.slice(-5).reverse()
+    return [...transactions].reverse()
   }, [transactions])
-
-  const isTeamAuctionPhase = settings.currentPhase === "Team Auction"
-  const isPlayerAuctionPhase = settings.currentPhase === "Player Auction"
 
   return (
     <div className="min-h-screen bg-background">
@@ -416,12 +562,12 @@ export default function AuctionPage() {
                         <SelectValue placeholder="Choose a player to auction..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {unsoldPlayers.length === 0 ? (
+                        {sortedUnsoldPlayers.length === 0 ? (
                           <div className="p-4 text-center text-sm text-muted-foreground">
                             No unsold players available
                           </div>
                         ) : (
-                          unsoldPlayers.map((player) => (
+                          sortedUnsoldPlayers.map((player) => (
                             <SelectItem key={player.id} value={player.id}>
                               <div className="flex items-center justify-between gap-4">
                                 <span className="font-medium">{player.name}</span>
@@ -558,29 +704,39 @@ export default function AuctionPage() {
               <Card className="order-2 lg:order-0">
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between flex-wrap gap-2">
-                    <span>Recent Transactions</span>
-                    {transactions.length > 0 && (
-                      <Button variant="outline" size="sm" onClick={undoLastTransaction}>
+                    <span>All Transactions</span>
+                    {selectedTransactionId && (
+                      <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        onClick={() => handleUndoTransaction(selectedTransactionId)}
+                      >
                         <RotateCcw className="h-4 w-4 mr-2" />
-                        Undo Last
+                        Undo Selected
                       </Button>
                     )}
                   </CardTitle>
-                  <CardDescription>Last 5 player sales</CardDescription>
+                  <CardDescription>Click a transaction to select it for undo</CardDescription>
                 </CardHeader>
                 <CardContent>
                   {recentTransactions.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">No transactions yet</div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
                       {recentTransactions.map((txn) => {
                         const player = players.find((p) => p.id === txn.playerId)
                         const team = teams.find((t) => t.id === txn.soldToTeam)
                         if (!player || !team) return null
+                        const isSelected = selectedTransactionId === txn.id
                         return (
                           <div
                             key={txn.id}
-                            className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/5 transition-colors gap-2"
+                            onClick={() => setSelectedTransactionId(isSelected ? null : txn.id)}
+                            className={`flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border cursor-pointer transition-all gap-2 ${
+                              isSelected 
+                                ? 'bg-primary/10 border-primary shadow-md' 
+                                : 'bg-card hover:bg-accent/5 hover:border-accent'
+                            }`}
                           >
                             <div className="flex-1 min-w-0">
                               <div className="font-medium truncate">{player.name}</div>
