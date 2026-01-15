@@ -967,6 +967,13 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           }),
         ])
 
+        // Add player to unsold list
+        await fetch('/api/unsold-players', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', playerId }),
+        })
+
         // Record transaction
         const transaction: AuctionTransaction = {
           id: `txn-${Date.now()}`,
