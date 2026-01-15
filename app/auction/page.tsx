@@ -875,7 +875,6 @@ export default function AuctionPage() {
                     <Input
                       id="price"
                       type="number"
-                      step="0.1"
                       min={selectedPlayer?.basePrice || 0}
                       placeholder="Enter final bid amount..."
                       value={soldPrice}
