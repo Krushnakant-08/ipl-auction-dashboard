@@ -418,13 +418,45 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
       const savedSettings = await settingsResponse.json()
       setSettings(savedSettings)
 
-      await broadcastUpdate({
-        teams: teams,
-        players: players,
-        transactions: transactions,
-        trades: trades,
-        settings: savedSettings,
-      })
+      // Initialize teams with 1 RTM and 1 RTS card if they don't already have them
+      const needsUpdate = teams.some(team => !team.rtmCount || !team.rtsCount)
+      
+      if (needsUpdate) {
+        const updatedTeams = teams.map(team => ({
+          ...team,
+          rtmCount: team.rtmCount || 1,
+          rtsCount: team.rtsCount || 1,
+        }))
+
+        // Update teams in the database that need initialization
+        for (const team of updatedTeams) {
+          if (!teams.find(t => t.id === team.id)?.rtmCount || !teams.find(t => t.id === team.id)?.rtsCount) {
+            await fetch('/api/teams', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(team),
+            })
+          }
+        }
+
+        setTeams(updatedTeams)
+
+        await broadcastUpdate({
+          teams: updatedTeams,
+          players: players,
+          transactions: transactions,
+          trades: trades,
+          settings: savedSettings,
+        })
+      } else {
+        await broadcastUpdate({
+          teams: teams,
+          players: players,
+          transactions: transactions,
+          trades: trades,
+          settings: savedSettings,
+        })
+      }
 
       toast({
         title: "RTM/RTS Auction Started!",
@@ -948,7 +980,6 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           remainingBudget: dbOriginalTeam.remainingBudget - rtmPrice,
           squadPlayerIds: [...(dbOriginalTeam.squadPlayerIds || []), playerId],
           rtmCount: (dbOriginalTeam.rtmCount || 1) - 1,
-          rtmUsed: true,
         }
 
         // Update player
@@ -1041,10 +1072,6 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return { can: false, reason: "No RTS cards available" }
       }
 
-      if (team.rtsUsed) {
-        return { can: false, reason: "RTS already used" }
-      }
-
       if (team.squadPlayerIds.length === 0) {
         return { can: false, reason: "No players in squad" }
       }
@@ -1095,13 +1122,12 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           return false
         }
 
-        // Update team (refund and remove player, mark RTS used, decrement count)
+        // Update team (refund and remove player, decrement RTS count)
         const updatedTeam = {
           ...dbTeam,
           remainingBudget: dbTeam.remainingBudget + refundAmount,
           squadPlayerIds: (dbTeam.squadPlayerIds || []).filter((id: string) => id !== playerId),
           rtsCount: (dbTeam.rtsCount || 1) - 1,
-          rtsUsed: true,
         }
 
         // Update player (return to pool)

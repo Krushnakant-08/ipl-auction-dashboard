@@ -14,13 +14,16 @@ import { AuctionHistory } from "@/components/auction-history"
 import { TradingHistory } from "@/components/trading-history"
 
 export default function DashboardPage() {
-  const { teams, players, getTeamPlayers } = useAuction()
+  const { teams, players, getTeamPlayers, settings } = useAuction()
   const { user } = useAuth()
 
   const stats = useMemo(() => {
     const soldPlayers = players.filter((p) => p.status === "Sold")
-    const totalSpent = teams.reduce((sum, t) => sum + t.franchiseBid, 0) + 
-      soldPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)
+    // Calculate total spent including franchise bids, player purchases, and RTM/RTS cards
+    const totalSpent = teams.reduce((sum, t) => {
+      const spent = settings.initialBudget - t.remainingBudget
+      return sum + spent
+    }, 0)
     const avgPrice = soldPlayers.length > 0 ? soldPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0) / soldPlayers.length : 0
 
     return {
@@ -29,21 +32,20 @@ export default function DashboardPage() {
       remainingPlayers: players.length - soldPlayers.length,
       avgPrice,
     }
-  }, [teams, players])
+  }, [teams, players, settings.initialBudget])
 
   const teamSpendingData = useMemo(() => {
     return teams.map((team) => {
-      const teamPlayers = getTeamPlayers(team.id)
-      const playersCost = teamPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)
-      const spent = team.franchiseBid + playersCost
+      // Calculate actual spent including franchise bid, players, and RTM/RTS cards
+      const spent = settings.initialBudget - team.remainingBudget
       return {
         name: team.franchiseName ? team.franchiseName.split(" ")[0] : team.groupName.split(" ")[0], // Shortened name for chart
         spent: Number(spent.toFixed(1)),
         remaining: Number(team.remainingBudget.toFixed(1)),
-        total: Number((spent + team.remainingBudget).toFixed(1)),
+        total: Number(settings.initialBudget.toFixed(1)),
       }
     })
-  }, [teams, getTeamPlayers])
+  }, [teams, settings.initialBudget])
 
   const roleDistributionData = useMemo(() => {
     const soldPlayers = players.filter((p) => p.status === "Sold")
