@@ -337,8 +337,7 @@ export default function AuctionPage() {
     return [...transactions].reverse()
   }, [transactions])
 
-  const isTeamAuctionPhase = settings.currentPhase === "Team Auction"
-  const isPlayerAuctionPhase = settings.currentPhase === "Player Auction"
+  const isRtmRtsAuctionPhase = settings.currentPhase === "RTM/RTS Auction"
 
   return (
     <div className="min-h-screen bg-background">
@@ -929,7 +928,7 @@ export default function AuctionPage() {
                   {recentTransactions.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">No transactions yet</div>
                   ) : (
-                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    <div className="space-y-3 max-h-150 overflow-y-auto">
                       {recentTransactions.map((txn) => {
                         const player = players.find((p) => p.id === txn.playerId)
                         const team = teams.find((t) => t.id === txn.soldToTeam)
