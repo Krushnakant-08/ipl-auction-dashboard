@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 // Cache to reduce database queries
 let cachedData: any = null
 let lastCacheTime = 0
-const CACHE_DURATION = 1000 // 1 second cache
+const CACHE_DURATION = 200 // 200ms cache to ensure fresh data when switching tabs
 
 export async function GET() {
   try {
