@@ -9,6 +9,8 @@ const TeamSchema = new mongoose.Schema({
   logo: { type: String, default: '' },
   squadPlayerIds: [{ type: String }],
   startingXI: { type: [String], default: [] },
+  rtmCount: { type: Number, default: 0 },
+  rtsCount: { type: Number, default: 0 },
   rtmUsed: { type: Boolean, default: false },
   rtsUsed: { type: Boolean, default: false },
   teamAuctionComplete: { type: Boolean, default: false },
