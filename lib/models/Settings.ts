@@ -6,7 +6,7 @@ const SettingsSchema = new mongoose.Schema({
   maxSquadSize: { type: Number },
   currentPhase: { 
     type: String, 
-    enum: ['Team Auction', 'Player Auction', 'Trading Window', 'Finalization'],
+    enum: ['Team Auction', 'RTM/RTS Auction', 'Player Auction', 'Trading Window', 'Finalization'],
     default: 'Team Auction'
   },
   tradingWindowEnd: { type: Date, default: null },

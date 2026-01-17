@@ -27,6 +27,12 @@ interface AuctionContextType {
 
   // Team Auction
   assignFranchise: (teamId: string, franchiseId: string, bidAmount: number) => Promise<boolean>
+  canStartRtmRtsAuction: () => boolean
+  startRtmRtsAuction: () => Promise<void>
+  
+  // RTM/RTS Auction
+  sellRtmCard: (teamId: string, price: number) => Promise<boolean>
+  sellRtsCard: (teamId: string, price: number) => Promise<boolean>
   canStartPlayerAuction: () => boolean
   startPlayerAuction: () => Promise<void>
 
@@ -385,6 +391,153 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
     [getTeamById, teams, settings, toast, broadcastUpdate],
   )
 
+  const canStartRtmRtsAuction = useCallback(() => {
+    return teams.every((t) => t.teamAuctionComplete)
+  }, [teams])
+
+  const startRtmRtsAuction = useCallback(async () => {
+    try {
+      const newSettings: AuctionSettings = {
+        initialBudget: settings.initialBudget,
+        minSquadSize: settings.minSquadSize,
+        maxSquadSize: settings.maxSquadSize,
+        currentPhase: "RTM/RTS Auction",
+        tradingWindowEnd: settings.tradingWindowEnd,
+      }
+
+      const settingsResponse = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings),
+      })
+
+      if (!settingsResponse.ok) {
+        throw new Error('Failed to update settings')
+      }
+
+      const savedSettings = await settingsResponse.json()
+      setSettings(savedSettings)
+
+      await broadcastUpdate({
+        teams: teams,
+        players: players,
+        transactions: transactions,
+        trades: trades,
+        settings: savedSettings,
+      })
+
+      toast({
+        title: "RTM/RTS Auction Started!",
+        description: "Teams can now bid for RTM and RTS cards",
+      })
+    } catch (error) {
+      console.error('❌ Error starting RTM/RTS auction:', error)
+      toast({ title: "Error", description: "Failed to start RTM/RTS auction", variant: "destructive" })
+    }
+  }, [settings, teams, players, transactions, trades, toast, broadcastUpdate])
+
+  const sellRtmCard = useCallback(async (teamId: string, price: number) => {
+    try {
+      const team = getTeamById(teamId)
+      if (!team) {
+        toast({ title: "Error", description: "Team not found", variant: "destructive" })
+        return false
+      }
+
+      if (settings.currentPhase !== "RTM/RTS Auction") {
+        toast({ title: "Error", description: "Not in RTM/RTS Auction phase", variant: "destructive" })
+        return false
+      }
+
+      if (price > team.remainingBudget) {
+        toast({ title: "Insufficient Budget", description: `Team only has ₹${team.remainingBudget} Cr remaining`, variant: "destructive" })
+        return false
+      }
+
+      const updatedTeam = {
+        ...team,
+        rtmCount: (team.rtmCount || 0) + 1,
+        remainingBudget: team.remainingBudget - price,
+      }
+
+      const teamResponse = await fetch('/api/teams', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTeam),
+      })
+
+      if (!teamResponse.ok) {
+        throw new Error('Failed to update team')
+      }
+
+      setTeams((prev) => prev.map((t) => t.id === teamId ? updatedTeam : t))
+
+      await broadcastUpdate()
+
+      toast({
+        title: "RTM Card Sold!",
+        description: `${team.franchiseName || team.groupName} purchased RTM for ₹${price} Cr`,
+      })
+
+      return true
+    } catch (error) {
+      console.error('❌ Error selling RTM card:', error)
+      toast({ title: "Error", description: "Failed to sell RTM card", variant: "destructive" })
+      return false
+    }
+  }, [getTeamById, settings, toast, broadcastUpdate])
+
+  const sellRtsCard = useCallback(async (teamId: string, price: number) => {
+    try {
+      const team = getTeamById(teamId)
+      if (!team) {
+        toast({ title: "Error", description: "Team not found", variant: "destructive" })
+        return false
+      }
+
+      if (settings.currentPhase !== "RTM/RTS Auction") {
+        toast({ title: "Error", description: "Not in RTM/RTS Auction phase", variant: "destructive" })
+        return false
+      }
+
+      if (price > team.remainingBudget) {
+        toast({ title: "Insufficient Budget", description: `Team only has ₹${team.remainingBudget} Cr remaining`, variant: "destructive" })
+        return false
+      }
+
+      const updatedTeam = {
+        ...team,
+        rtsCount: (team.rtsCount || 0) + 1,
+        remainingBudget: team.remainingBudget - price,
+      }
+
+      const teamResponse = await fetch('/api/teams', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTeam),
+      })
+
+      if (!teamResponse.ok) {
+        throw new Error('Failed to update team')
+      }
+
+      setTeams((prev) => prev.map((t) => t.id === teamId ? updatedTeam : t))
+
+      await broadcastUpdate()
+
+      toast({
+        title: "RTS Card Sold!",
+        description: `${team.franchiseName || team.groupName} purchased RTS for ₹${price} Cr`,
+      })
+
+      return true
+    } catch (error) {
+      console.error('❌ Error selling RTS card:', error)
+      toast({ title: "Error", description: "Failed to sell RTS card", variant: "destructive" })
+      return false
+    }
+  }, [getTeamById, settings, toast, broadcastUpdate])
+
   const canStartPlayerAuction = useCallback(() => {
     return teams.every((t) => t.teamAuctionComplete)
   }, [teams])
@@ -716,8 +869,8 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return { can: false, reason: "Player or team not found" }
       }
 
-      if (team.rtmUsed) {
-        return { can: false, reason: "RTM already used" }
+      if ((team.rtmCount || 0) === 0) {
+        return { can: false, reason: "No RTM cards available" }
       }
 
       if (player.status !== "Sold") {
@@ -789,11 +942,12 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           squadPlayerIds: (dbCurrentTeam.squadPlayerIds || []).filter((id: string) => id !== playerId),
         }
 
-        // Update original team (deduct and add player)
+        // Update original team (deduct and add player, decrement RTM count)
         const updatedOriginalTeam = {
           ...dbOriginalTeam,
           remainingBudget: dbOriginalTeam.remainingBudget - rtmPrice,
           squadPlayerIds: [...(dbOriginalTeam.squadPlayerIds || []), playerId],
+          rtmCount: (dbOriginalTeam.rtmCount || 1) - 1,
           rtmUsed: true,
         }
 
@@ -883,6 +1037,10 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         return { can: false, reason: "Team not found" }
       }
 
+      if ((team.rtsCount || 0) === 0) {
+        return { can: false, reason: "No RTS cards available" }
+      }
+
       if (team.rtsUsed) {
         return { can: false, reason: "RTS already used" }
       }
@@ -937,11 +1095,12 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
           return false
         }
 
-        // Update team (refund and remove player)
+        // Update team (refund and remove player, mark RTS used, decrement count)
         const updatedTeam = {
           ...dbTeam,
           remainingBudget: dbTeam.remainingBudget + refundAmount,
           squadPlayerIds: (dbTeam.squadPlayerIds || []).filter((id: string) => id !== playerId),
+          rtsCount: (dbTeam.rtsCount || 1) - 1,
           rtsUsed: true,
         }
 
@@ -1703,6 +1862,10 @@ export function AuctionProvider({ children }: { children: React.ReactNode }) {
         trades,
         availableFranchises,
         assignFranchise,
+        canStartRtmRtsAuction,
+        startRtmRtsAuction,
+        sellRtmCard,
+        sellRtsCard,
         canStartPlayerAuction,
         startPlayerAuction,
         startTradingWindow,
