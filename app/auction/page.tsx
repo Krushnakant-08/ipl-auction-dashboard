@@ -25,6 +25,10 @@ export default function AuctionPage() {
     transactions,
     availableFranchises,
     assignFranchise,
+    canStartRtmRtsAuction,
+    startRtmRtsAuction,
+    sellRtmCard,
+    sellRtsCard,
     canStartPlayerAuction,
     startPlayerAuction,
   } = useAuction()
@@ -32,6 +36,12 @@ export default function AuctionPage() {
   const [selectedGroupId, setSelectedGroupId] = useState<string>("")
   const [selectedFranchiseId, setSelectedFranchiseId] = useState<string>("")
   const [franchiseBid, setFranchiseBid] = useState<string>("")
+
+  // RTM/RTS Auction state
+  const [selectedTeamForRtm, setSelectedTeamForRtm] = useState<string>("")
+  const [rtmPrice, setRtmPrice] = useState<string>("")
+  const [selectedTeamForRts, setSelectedTeamForRts] = useState<string>("")
+  const [rtsPrice, setRtsPrice] = useState<string>("")
 
   // Player auction state
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>("")
@@ -125,6 +135,38 @@ export default function AuctionPage() {
       console.log('✅ Player auction started successfully')
     } catch (error) {
       console.error('❌ Failed to start player auction:', error)
+    }
+  }
+
+  const handleStartRtmRtsAuction = async () => {
+    try {
+      await startRtmRtsAuction()
+    } catch (error) {
+      console.error('❌ Failed to start RTM/RTS auction:', error)
+    }
+  }
+
+  const handleSellRtmCard = async () => {
+    if (!selectedTeamForRtm || !rtmPrice) return
+    const price = Number.parseFloat(rtmPrice)
+    if (Number.isNaN(price) || price <= 0) return
+
+    const success = await sellRtmCard(selectedTeamForRtm, price)
+    if (success) {
+      setSelectedTeamForRtm("")
+      setRtmPrice("")
+    }
+  }
+
+  const handleSellRtsCard = async () => {
+    if (!selectedTeamForRts || !rtsPrice) return
+    const price = Number.parseFloat(rtsPrice)
+    if (Number.isNaN(price) || price <= 0) return
+
+    const success = await sellRtsCard(selectedTeamForRts, price)
+    if (success) {
+      setSelectedTeamForRts("")
+      setRtsPrice("")
     }
   }
 
@@ -295,6 +337,8 @@ export default function AuctionPage() {
     return [...transactions].reverse()
   }, [transactions])
 
+  const isRtmRtsAuctionPhase = settings.currentPhase === "RTM/RTS Auction"
+
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
@@ -313,6 +357,7 @@ export default function AuctionPage() {
               <h1 className="text-3xl font-bold text-foreground">Live Auction</h1>
               <p className="text-muted-foreground mt-1">
                 {isTeamAuctionPhase && "Conduct team franchise auction"}
+                {isRtmRtsAuctionPhase && "Conduct RTM and RTS card auction"}
                 {isPlayerAuctionPhase && "Conduct player auctions in real-time"}
               </p>
             </div>
@@ -493,17 +538,18 @@ export default function AuctionPage() {
                   </div>
 
                   <Button 
-                    onClick={handleStartPlayerAuction} 
+                    onClick={handleStartRtmRtsAuction} 
+                    disabled={!canStartRtmRtsAuction()}
                     className="w-full" 
                     size="lg"
                   >
                     <Play className="h-4 w-4 mr-2" />
-                    {canStartPlayerAuction() ? "Start Player Auction" : "Start Player Auction Anyway"}
+                    Start RTM/RTS Auction
                   </Button>
                   
-                  {!canStartPlayerAuction() && (
+                  {!canStartRtmRtsAuction() && (
                     <p className="text-xs text-muted-foreground text-center mt-2">
-                      Teams with franchises will participate, others will be skipped
+                      Complete franchise assignments first
                     </p>
                   )}
                 </CardContent>
@@ -524,6 +570,167 @@ export default function AuctionPage() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        )}
+
+        {/* RTM/RTS Auction Phase */}
+        {isRtmRtsAuctionPhase && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* RTM Card Auction */}
+            <Card className="border-primary">
+              <CardHeader className="bg-primary/5">
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  RTM Card Auction
+                </CardTitle>
+                <CardDescription>Right to Match - Bid for 1 additional RTM card (Teams start with 1)</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label>Select Team</Label>
+                  <Select value={selectedTeamForRtm} onValueChange={setSelectedTeamForRtm}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose team..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams
+                        .filter((t) => t.teamAuctionComplete && (t.rtmCount || 0) < 2)
+                        .map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.franchiseName} (₹{team.remainingBudget.toFixed(1)} Cr)
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Bid Amount (Crores)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    placeholder="Enter bid amount..."
+                    value={rtmPrice}
+                    onChange={(e) => setRtmPrice(e.target.value)}
+                  />
+                </div>
+
+                <Button
+                  onClick={handleSellRtmCard}
+                  disabled={!selectedTeamForRtm || !rtmPrice}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Gavel className="h-4 w-4 mr-2" />
+                  Sell RTM Card
+                </Button>
+
+                <div className="pt-4 border-t">
+                  <h4 className="font-semibold mb-2">Teams with Additional RTM</h4>
+                  <div className="space-y-2">
+                    {teams
+                      .filter((t) => (t.rtmCount || 0) > 1)
+                      .map((team) => (
+                        <div key={team.id} className="flex items-center justify-between p-2 rounded-lg border bg-card">
+                          <span className="font-medium">{team.franchiseName}</span>
+                          <Badge>{team.rtmCount} RTM Cards</Badge>
+                        </div>
+                      ))}
+                    {teams.filter((t) => (t.rtmCount || 0) > 1).length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">No additional RTM cards purchased yet</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* RTS Card Auction */}
+            <Card className="border-primary">
+              <CardHeader className="bg-primary/5">
+                <CardTitle className="flex items-center gap-2">
+                  <RotateCcw className="h-5 w-5 text-primary" />
+                  RTS Card Auction
+                </CardTitle>
+                <CardDescription>Right to Sell - Bid for 1 additional RTS card (Teams start with 1)</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label>Select Team</Label>
+                  <Select value={selectedTeamForRts} onValueChange={setSelectedTeamForRts}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose team..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams
+                        .filter((t) => t.teamAuctionComplete && (t.rtsCount || 0) < 2)
+                        .map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.franchiseName} (₹{team.remainingBudget.toFixed(1)} Cr)
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Bid Amount (Crores)</Label>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    placeholder="Enter bid amount..."
+                    value={rtsPrice}
+                    onChange={(e) => setRtsPrice(e.target.value)}
+                  />
+                </div>
+
+                <Button
+                  onClick={handleSellRtsCard}
+                  disabled={!selectedTeamForRts || !rtsPrice}
+                  className="w-full"
+                  size="lg"
+                >
+                  <Gavel className="h-4 w-4 mr-2" />
+                  Sell RTS Card
+                </Button>
+
+                <div className="pt-4 border-t">
+                  <h4 className="font-semibold mb-2">Teams with Additional RTS</h4>
+                  <div className="space-y-2">
+                    {teams
+                      .filter((t) => (t.rtsCount || 0) > 1)
+                      .map((team) => (
+                        <div key={team.id} className="flex items-center justify-between p-2 rounded-lg border bg-card">
+                          <span className="font-medium">{team.franchiseName}</span>
+                          <Badge>{team.rtsCount} RTS Cards</Badge>
+                        </div>
+                      ))}
+                    {teams.filter((t) => (t.rtsCount || 0) > 1).length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">No additional RTS cards purchased yet</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bottom Section - Start Player Auction */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Ready to Start Player Auction?</CardTitle>
+                <CardDescription>Proceed to player auction after RTM/RTS cards are allocated</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button 
+                  onClick={handleStartPlayerAuction} 
+                  className="w-full" 
+                  size="lg"
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Start Player Auction
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -721,7 +928,7 @@ export default function AuctionPage() {
                   {recentTransactions.length === 0 ? (
                     <div className="text-center py-8 text-muted-foreground">No transactions yet</div>
                   ) : (
-                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    <div className="space-y-3 max-h-150 overflow-y-auto">
                       {recentTransactions.map((txn) => {
                         const player = players.find((p) => p.id === txn.playerId)
                         const team = teams.find((t) => t.id === txn.soldToTeam)
