@@ -39,10 +39,19 @@ export default function PursePage() {
 
   // Fetch teams and setup real-time updates
   useEffect(() => {
+    let isInitialLoad = true
+    
     const fetchTeams = async () => {
       try {
-        setLoading(true)
-        const response = await fetch('/api/teams')
+        if (isInitialLoad) {
+          setLoading(true)
+        }
+        const response = await fetch('/api/teams', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
+        })
         const data = await response.json()
         console.log('Fetched teams data:', data)
         
@@ -61,13 +70,21 @@ export default function PursePage() {
       } catch (error) {
         console.error('Error fetching teams:', error)
       } finally {
-        setLoading(false)
+        if (isInitialLoad) {
+          setLoading(false)
+          isInitialLoad = false
+        }
       }
     }
 
     const fetchSettings = async () => {
       try {
-        const response = await fetch('/api/settings')
+        const response = await fetch('/api/settings', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache',
+          }
+        })
         const data = await response.json()
         if (Array.isArray(data) && data.length > 0) {
           setSettings(data[0])
@@ -84,17 +101,27 @@ export default function PursePage() {
     // Setup WebSocket for real-time updates
     if (!wsRef.current) {
       wsRef.current = new AuctionWebSocket()
-      wsRef.current.connect((data) => {
+      wsRef.current.connect((updateData) => {
+        console.log('WebSocket update received:', updateData)
         // Refresh teams data on any update
-        if (data.type === 'auction_update' || data.type === 'team_update' || data.type === 'player_update') {
-          fetchTeams()
-        }
+        fetchTeams()
+        fetchSettings()
       })
     }
 
+    // Also set up polling as fallback (every 3 seconds)
+    const intervalId = setInterval(() => {
+      console.log('Polling for updates...')
+      fetchTeams()
+      fetchSettings()
+    }, 3000)
+
     return () => {
-      wsRef.current?.disconnect()
-      wsRef.current = null
+      if (wsRef.current) {
+        wsRef.current.disconnect()
+        wsRef.current = null
+      }
+      clearInterval(intervalId)
     }
   }, [])
 
@@ -107,23 +134,7 @@ export default function PursePage() {
   const rightTeams = sortedTeams.slice(halfLength)
 
   return (
-    <div className="min-h-screen bg-[#0a1929] relative overflow-hidden">
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_#1e3a8a_0%,_transparent_50%)]"></div>
-      </div>
-      
-      {/* Trophy Background Image */}
-      <div className="absolute inset-0 flex items-center justify-center opacity-15">
-        <Image
-          src="/pur.jpg"
-          alt="IPL Trophy"
-          fill
-          className="object-cover"
-          priority
-        />
-      </div>
-
+    <div className="min-h-screen bg-[#060606] relative overflow-hidden">
       <main className="relative z-10 mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 py-4">
         {/* Header */}
         <div className="text-center mb-4">
@@ -193,12 +204,13 @@ export default function PursePage() {
               {/* Center Column - Trophy */}
               <div className="flex items-center justify-center">
                 <div className="relative w-full h-[500px]">
-                  <Image
-                    src="/trophy.png"
-                    alt="IPL Trophy"
-                    fill
-                    className="object-cover drop-shadow-2xl"
-                    sizes="350px"
+                  <video
+                    src="/ipl.mp4"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-contain scale-129 drop-shadow-2xl rounded-lg"
                   />
                 </div>
               </div>
