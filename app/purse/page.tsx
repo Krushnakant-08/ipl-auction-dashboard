@@ -1,241 +1,273 @@
 "use client"
-
-import { Card, CardContent } from "@/components/ui/card"
 import Image from "next/image"
 import { useEffect, useRef, useState } from "react"
 import { Team } from "@/lib/types"
+import { AuctionWebSocket } from "@/lib/websocket"
+
+// Team color schemes matching IPL teams
+const teamColors: Record<string, { bg: string; text: string }> = {
+  'Kolkata Knight Riders': { bg: 'bg-gradient-to-br from-purple-900 to-purple-700', text: 'text-yellow-300' },
+  'Chennai Super Kings': { bg: 'bg-gradient-to-br from-yellow-400 to-yellow-300', text: 'text-blue-900' },
+  'Sunrisers Hyderabad': { bg: 'bg-gradient-to-br from-orange-500 to-orange-400', text: 'text-white' },
+  'Delhi Capitals': { bg: 'bg-gradient-to-br from-blue-600 to-blue-500', text: 'text-white' },
+  'Rajasthan Royals': { bg: 'bg-gradient-to-br from-pink-400 to-pink-300', text: 'text-white' },
+  'Royal Challengers Bangalore': { bg: 'bg-gradient-to-br from-red-600 to-red-500', text: 'text-white' },
+  'Punjab Kings': { bg: 'bg-gradient-to-br from-red-500 to-red-400', text: 'text-white' },
+  'Gujarat Titans': { bg: 'bg-gradient-to-br from-blue-800 to-blue-700', text: 'text-white' },
+  'Mumbai Indians': { bg: 'bg-gradient-to-br from-blue-700 to-blue-600', text: 'text-white' },
+  'Lucknow Super Giants': { bg: 'bg-gradient-to-br from-cyan-400 to-cyan-300', text: 'text-blue-900' },
+}
+
+const getTeamColor = (teamName: string) => {
+  // Try to match team name with color scheme
+  const upperName = teamName
+  console.log('Determining colors for team:', teamName)
+  for (const [key, colors] of Object.entries(teamColors)) {
+    if (upperName.includes(key)) {
+      return colors
+    }
+  }
+  // Default colors
+  return { bg: 'bg-gradient-to-br from-blue-600 to-blue-500', text: 'text-white' }
+}
 
 export default function PursePage() {
   const [teams, setTeams] = useState<Team[]>([])
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [loading, setLoading] = useState(true)
+  const [settings, setSettings] = useState<any>(null)
+  const wsRef = useRef<AuctionWebSocket | null>(null)
 
-  // Fetch teams without authentication
+  // Fetch teams and setup real-time updates
   useEffect(() => {
     const fetchTeams = async () => {
       try {
+        setLoading(true)
         const response = await fetch('/api/teams')
         const data = await response.json()
-        if (data.success) {
+        console.log('Fetched teams data:', data)
+        
+        // Handle different response formats
+        if (Array.isArray(data)) {
+          setTeams(data)
+          console.log('Teams set:', data.length)
+        } else if (data.success && data.teams) {
           setTeams(data.teams)
+          console.log('Teams set:', data.teams.length)
+        } else if (data.error) {
+          console.error('API error:', data.error)
+        } else {
+          console.error('Unexpected response format:', data)
         }
       } catch (error) {
         console.error('Error fetching teams:', error)
+      } finally {
+        setLoading(false)
       }
     }
+
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/settings')
+        const data = await response.json()
+        if (Array.isArray(data) && data.length > 0) {
+          setSettings(data[0])
+        }
+      } catch (error) {
+        console.error('Error fetching settings:', error)
+      }
+    }
+    
+    // Initial fetch
     fetchTeams()
+    fetchSettings()
+
+    // Setup WebSocket for real-time updates
+    if (!wsRef.current) {
+      wsRef.current = new AuctionWebSocket()
+      wsRef.current.connect((data) => {
+        // Refresh teams data on any update
+        if (data.type === 'auction_update' || data.type === 'team_update' || data.type === 'player_update') {
+          fetchTeams()
+        }
+      })
+    }
+
+    return () => {
+      wsRef.current?.disconnect()
+      wsRef.current = null
+    }
   }, [])
 
   // Sort teams by remaining budget (descending)
   const sortedTeams = [...teams].sort((a, b) => b.remainingBudget - a.remainingBudget)
   
   // Split teams into left and right columns
-  const leftTeams = sortedTeams.slice(0, 5)
-  const rightTeams = sortedTeams.slice(5, 10)
-
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    let animationFrameId: number
-    let rotation = 0
-
-    const drawTrophy = () => {
-      const width = canvas.width
-      const height = canvas.height
-      
-      ctx.clearRect(0, 0, width, height)
-      
-      // Center point
-      const centerX = width / 2
-      const centerY = height / 2
-      
-      // Apply rotation
-      ctx.save()
-      ctx.translate(centerX, centerY)
-      ctx.rotate(rotation)
-      ctx.translate(-centerX, -centerY)
-      
-      // Create gradient for trophy
-      const gradient = ctx.createLinearGradient(centerX - 100, 0, centerX + 100, height)
-      gradient.addColorStop(0, "#FFD700")
-      gradient.addColorStop(0.5, "#FFA500")
-      gradient.addColorStop(1, "#FF8C00")
-      
-      // Draw trophy body (cup shape)
-      ctx.fillStyle = gradient
-      ctx.beginPath()
-      ctx.moveTo(centerX - 80, centerY - 100)
-      ctx.quadraticCurveTo(centerX - 100, centerY - 50, centerX - 60, centerY + 20)
-      ctx.lineTo(centerX - 40, centerY + 60)
-      ctx.lineTo(centerX + 40, centerY + 60)
-      ctx.lineTo(centerX + 60, centerY + 20)
-      ctx.quadraticCurveTo(centerX + 100, centerY - 50, centerX + 80, centerY - 100)
-      ctx.closePath()
-      ctx.fill()
-      
-      // Draw trophy handles
-      ctx.strokeStyle = "#FFD700"
-      ctx.lineWidth = 12
-      ctx.beginPath()
-      ctx.arc(centerX - 90, centerY - 30, 30, 0.5, Math.PI - 0.5, false)
-      ctx.stroke()
-      
-      ctx.beginPath()
-      ctx.arc(centerX + 90, centerY - 30, 30, Math.PI + 0.5, 2 * Math.PI - 0.5, false)
-      ctx.stroke()
-      
-      // Draw base
-      ctx.fillStyle = gradient
-      ctx.fillRect(centerX - 50, centerY + 60, 100, 15)
-      ctx.fillRect(centerX - 60, centerY + 75, 120, 10)
-      ctx.fillRect(centerX - 70, centerY + 85, 140, 15)
-      
-      // Add shine effect
-      const shineGradient = ctx.createLinearGradient(centerX - 60, centerY - 80, centerX - 40, centerY - 40)
-      shineGradient.addColorStop(0, "rgba(255, 255, 255, 0.8)")
-      shineGradient.addColorStop(1, "rgba(255, 255, 255, 0)")
-      ctx.fillStyle = shineGradient
-      ctx.beginPath()
-      ctx.ellipse(centerX - 40, centerY - 50, 20, 40, 0.3, 0, 2 * Math.PI)
-      ctx.fill()
-      
-      ctx.restore()
-      
-      // Add IPL text
-      ctx.fillStyle = "#1e40af"
-      ctx.font = "bold 32px Arial"
-      ctx.textAlign = "center"
-      ctx.fillText("IPL", centerX, centerY + 130)
-      ctx.font = "bold 18px Arial"
-      ctx.fillText("TROPHY", centerX, centerY + 155)
-      
-      rotation += 0.01
-      animationFrameId = requestAnimationFrame(drawTrophy)
-    }
-
-    drawTrophy()
-
-    return () => {
-      cancelAnimationFrame(animationFrameId)
-    }
-  }, [])
+  const halfLength = Math.ceil(sortedTeams.length / 2)
+  const leftTeams = sortedTeams.slice(0, halfLength)
+  const rightTeams = sortedTeams.slice(halfLength)
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-950 via-purple-950 to-blue-900">
-      <main className="mx-auto max-w-[1600px] px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-white mb-2">Team Purse Status</h1>
-          <p className="text-blue-200 text-xl">Remaining Budget Overview</p>
+    <div className="min-h-screen bg-[#0a1929] relative overflow-hidden">
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,_#1e3a8a_0%,_transparent_50%)]"></div>
+      </div>
+      
+      {/* Trophy Background Image */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-15">
+        <Image
+          src="/pur.jpg"
+          alt="IPL Trophy"
+          fill
+          className="object-cover"
+          priority
+        />
+      </div>
+
+      <main className="relative z-10 mx-auto max-w-[1800px] px-4 sm:px-6 lg:px-8 py-4">
+        {/* Header */}
+        <div className="text-center mb-4">
+          <h1 className="text-4xl md:text-5xl font-black text-white mb-1 tracking-tight">
+            PURSE REMAINING
+          </h1>
+          <p className="text-orange-500 text-lg md:text-xl font-bold tracking-wide">
+            FOR EACH TEAMS (SLOTS LEFT)
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Left Column - 5 Teams */}
-          <div className="space-y-4">
-            {leftTeams.map((team, index) => (
-              <Card
-                key={team.id}
-                className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-lg border-white/20 hover:scale-105 transition-transform duration-300"
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="relative h-16 w-16 rounded-full overflow-hidden bg-white/10 ring-2 ring-white/30">
-                        <Image
-                          src={team.logo || "/placeholder.svg"}
-                          alt={team.franchiseName || team.groupName}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-white">
-                          {team.franchiseName || team.groupName}
-                        </h3>
-                        {team.franchiseName && (
-                          <p className="text-sm text-blue-200">{team.groupName}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-bold text-yellow-400">
-                        ₹{team.remainingBudget.toFixed(1)}
-                      </div>
-                      <div className="text-sm text-blue-200">Cr Remaining</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        {loading ? (
+          <div className="text-center text-white text-2xl py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-orange-500 mx-auto"></div>
+            <p className="mt-4">Loading teams...</p>
           </div>
+        ) : teams.length === 0 ? (
+          <div className="text-center text-white text-2xl py-20 bg-white/5 rounded-2xl border border-white/10">
+            <p className="mb-2">No teams found</p>
+            <p className="text-sm text-gray-400">Please initialize teams in settings</p>
+          </div>
+        ) : (
+          <>
+            {/* Teams Grid with Trophy in Center */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full px-4 items-center">
+              {/* Left Column - First Half of Teams */}
+              <div className="space-y-2">
+                {leftTeams.map((team) => {
+                  const colors = getTeamColor(team.franchiseName || team.groupName)
+                  const slotsLeft = settings ? settings.maxSquadSize - team.squadPlayerIds.length : 0
+                  
+                  return (
+                    <div
+                      key={team.id}
+                      className={`${colors.bg} rounded-lg p-4 shadow-2xl transform hover:scale-105 transition-all duration-300 border-2 border-white/20`}
+                    >
+                      <div className="flex items-center justify-between">
+                        {/* Logo */}
+                        <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0">
+                          <div className="absolute inset-0 bg-white/20 rounded-full blur-xl"></div>
+                          <div className="relative h-full w-full rounded-full overflow-hidden bg-white/90 p-2">
+                            <Image
+                              src={team.logo || "/placeholder.svg"}
+                              alt={team.franchiseName || team.groupName}
+                              fill
+                              className="object-cover p-1"
+                              sizes="80px"
+                            />
+                          </div>
+                        </div>
 
-          {/* Center - 3D Trophy */}
-          <div className="flex flex-col items-center justify-center">
-            <div className="relative">
-              <canvas
-                ref={canvasRef}
-                width={400}
-                height={500}
-                className="drop-shadow-2xl"
-              />
-              <div className="absolute inset-0 bg-gradient-radial from-yellow-400/20 to-transparent blur-3xl -z-10" />
+                        {/* Purse Info */}
+                        <div className={`flex-1 text-right ${colors.text}`}>
+                          <div className="text-3xl md:text-4xl font-black leading-none mb-1">
+                            {team.remainingBudget.toFixed(1)} Cr
+                          </div>
+                          <div className={`text-xs md:text-sm font-bold opacity-90`}>
+                            Slots left: {slotsLeft}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Center Column - Trophy */}
+              <div className="flex items-center justify-center">
+                <div className="relative w-full h-[500px]">
+                  <Image
+                    src="/trophy.png"
+                    alt="IPL Trophy"
+                    fill
+                    className="object-cover drop-shadow-2xl"
+                    sizes="350px"
+                  />
+                </div>
+              </div>
+
+              {/* Right Column - Second Half of Teams */}
+              <div className="space-y-2">
+                {rightTeams.map((team) => {
+                  const colors = getTeamColor(team.franchiseName || team.groupName)
+                  const slotsLeft = settings ? settings.maxSquadSize - team.squadPlayerIds.length : 0
+                  
+                  return (
+                    <div
+                      key={team.id}
+                      className={`${colors.bg} rounded-lg p-4 shadow-2xl transform hover:scale-105 transition-all duration-300 border-2 border-white/20`}
+                    >
+                      <div className="flex items-center justify-between">
+                        {/* Logo */}
+                        <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0">
+                          <div className="absolute inset-0 bg-white/20 rounded-full blur-xl"></div>
+                          <div className="relative h-full w-full rounded-full overflow-hidden bg-white/90 p-2">
+                            <Image
+                              src={team.logo || "/placeholder.svg"}
+                              alt={team.franchiseName || team.groupName}
+                              fill
+                              className="object-cover p-1"
+                              sizes="80px"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Purse Info */}
+                        <div className={`flex-1 text-right ${colors.text}`}>
+                          <div className="text-3xl md:text-4xl font-black leading-none mb-1">
+                            {team.remainingBudget.toFixed(1)} Cr
+                          </div>
+                          <div className={`text-xs md:text-sm font-bold opacity-90`}>
+                            Slots left: {slotsLeft}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* Right Column - 5 Teams */}
-          <div className="space-y-4">
-            {rightTeams.map((team, index) => (
-              <Card
-                key={team.id}
-                className="bg-gradient-to-bl from-white/10 to-white/5 backdrop-blur-lg border-white/20 hover:scale-105 transition-transform duration-300"
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="text-left">
-                      <div className="text-3xl font-bold text-yellow-400">
-                        ₹{team.remainingBudget.toFixed(1)}
-                      </div>
-                      <div className="text-sm text-blue-200">Cr Remaining</div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <h3 className="text-xl font-bold text-white">
-                          {team.franchiseName || team.groupName}
-                        </h3>
-                        {team.franchiseName && (
-                          <p className="text-sm text-blue-200">{team.groupName}</p>
-                        )}
-                      </div>
-                      <div className="relative h-16 w-16 rounded-full overflow-hidden bg-white/10 ring-2 ring-white/30">
-                        <Image
-                          src={team.logo || "/placeholder.svg"}
-                          alt={team.franchiseName || team.groupName}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="mt-12 text-center">
-          <div className="inline-block bg-white/10 backdrop-blur-lg rounded-lg px-8 py-4 border border-white/20">
-            <p className="text-white text-sm">
-              <span className="font-bold">Total Teams:</span> {teams.length} | 
-              <span className="font-bold ml-4">Average Purse:</span> ₹
-              {(teams.reduce((sum, t) => sum + t.remainingBudget, 0) / teams.length).toFixed(1)} Cr
-            </p>
-          </div>
-        </div>
+            {/* Footer Stats */}
+            <div className="mt-4 text-center">
+              <div className="inline-flex flex-wrap gap-4 bg-white/10 backdrop-blur-lg rounded-xl px-6 py-3 border border-white/20">
+                <div className="text-white text-sm">
+                  <span className="font-bold text-orange-500">Total Teams:</span>{" "}
+                  <span className="text-lg font-bold">{teams.length}</span>
+                </div>
+                <div className="text-white text-sm">
+                  <span className="font-bold text-orange-500">Average Purse:</span>{" "}
+                  <span className="text-lg font-bold">
+                    ₹{teams.length > 0 ? (teams.reduce((sum, t) => sum + t.remainingBudget, 0) / teams.length).toFixed(1) : '0'} Cr
+                  </span>
+                </div>
+                <div className="text-white text-sm">
+                  <span className="font-bold text-orange-500">Highest:</span>{" "}
+                  <span className="text-lg font-bold">
+                    ₹{sortedTeams.length > 0 ? sortedTeams[0].remainingBudget.toFixed(1) : '0'} Cr
+                  </span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   )
