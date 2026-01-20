@@ -39,7 +39,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const ADMIN_ONLY_ROUTES = ["/auction", "/settings", "/teams", "/players"]
 
 // Routes that don't require authentication
-const PUBLIC_ROUTES = ["/login"]
+const PUBLIC_ROUTES = ["/login", "/purse"]
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
