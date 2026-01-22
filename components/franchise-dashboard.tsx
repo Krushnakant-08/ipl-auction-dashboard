@@ -75,7 +75,7 @@ export function FranchiseDashboard() {
                 src={myTeam.logo || "/placeholder.svg"}
                 alt={myTeam.franchiseName || "Team"}
                 fill
-                className="object-cover"
+                className="object-contain"
                 sizes="96px"
               />
             </div>
