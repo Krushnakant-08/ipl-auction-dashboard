@@ -9,16 +9,16 @@ export const defaultSettings: AuctionSettings = {
 
 // Available franchises for bidding
 export const availableFranchises = [
-  { "id": "f1", "name": "Mumbai Indians", "logo": "mumbai-indians-logo.jpg" },
-  { "id": "f2", "name": "Chennai Super Kings", "logo": "chennai-super-kings-logo.jpg" },
-  { "id": "f3", "name": "Royal Challengers Bangalore", "logo": "royal-challengers-bangalore-logo.jpg" },
-  { "id": "f4", "name": "Delhi Capitals", "logo": "delhi-capitals-logo.jpg" },
-  { "id": "f5", "name": "Kolkata Knight Riders", "logo": "kolkata-knight-riders-logo.jpg" },
-  { "id": "f6", "name": "Punjab Kings", "logo": "punjab-kings-logo.jpg" },
-  { "id": "f7", "name": "Sunrisers Hyderabad", "logo": "sunrisers-hyderabad-logo.jpg" },
-  { "id": "f8", "name": "Rajasthan Royals", "logo": "rajasthan-royals-logo.jpg" },
-  { "id": "f9", "name": "Gujarat Titans", "logo": "gujarat-titans-logo.jpg" },
-  { "id": "f10", "name": "Lucknow Super Giants", "logo": "lucknow-super-giants-logo.jpg" }
+  { "id": "f1", "name": "Mumbai Indians", "logo": "mi.png" },
+  { "id": "f2", "name": "Chennai Super Kings", "logo": "csk.png" },
+  { "id": "f3", "name": "Royal Challengers Bangalore", "logo": "rcb.png" },
+  { "id": "f4", "name": "Delhi Capitals", "logo": "dc.png" },
+  { "id": "f5", "name": "Kolkata Knight Riders", "logo": "kkr.png" },
+  { "id": "f6", "name": "Punjab Kings", "logo": "pksb.png" },
+  { "id": "f7", "name": "Sunrisers Hyderabad", "logo": "srh.png" },
+  { "id": "f8", "name": "Rajasthan Royals", "logo": "rr.png" },
+  { "id": "f9", "name": "Gujarat Titans", "logo": "gt.png" },
+  { "id": "f10", "name": "Lucknow Super Giants", "logo": "lsg.png" }
 ]
 
 export const mockTeams: Team[] = [
