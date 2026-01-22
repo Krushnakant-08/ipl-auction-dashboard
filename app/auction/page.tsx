@@ -185,11 +185,11 @@ export default function AuctionPage() {
       
       if (response.ok) {
         console.log(`✅ Player marked as unsold`)
-        // Refresh unsold players list to show new player at top
-        await fetchUnsoldPlayersWithTimestamp()
-        // Clear selection after marking as unsold
+        // Clear selection immediately for faster UX
         setSelectedPlayerId('')
         setSoldPrice('')
+        // Refresh unsold players list in background (no await)
+        fetchUnsoldPlayersWithTimestamp()
       } else {
         const data = await response.json()
         console.error('❌ Failed to mark as unsold:', data.error)
@@ -458,12 +458,13 @@ export default function AuctionPage() {
                     <Input
                       id="bid"
                       type="number"
-                      step="0.1"
                       min="0"
                       max={settings.initialBudget}
                       placeholder="Enter franchise bid..."
                       value={franchiseBid}
                       onChange={(e) => setFranchiseBid(e.target.value)}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      onFocus={(e) => e.target.addEventListener('wheel', (evt) => evt.preventDefault(), { passive: false })}
                     />
                     <p className="text-xs text-muted-foreground">
                       Budget after purchase: ₹
@@ -610,11 +611,12 @@ export default function AuctionPage() {
                   <Label>Bid Amount (Crores)</Label>
                   <Input
                     type="number"
-                    step="0.1"
                     min="0"
                     placeholder="Enter bid amount..."
                     value={rtmPrice}
                     onChange={(e) => setRtmPrice(e.target.value)}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onFocus={(e) => e.target.addEventListener('wheel', (evt) => evt.preventDefault(), { passive: false })}
                   />
                 </div>
 
@@ -679,11 +681,12 @@ export default function AuctionPage() {
                   <Label>Bid Amount (Crores)</Label>
                   <Input
                     type="number"
-                    step="0.1"
                     min="0"
                     placeholder="Enter bid amount..."
                     value={rtsPrice}
                     onChange={(e) => setRtsPrice(e.target.value)}
+                    onWheel={(e) => e.currentTarget.blur()}
+                    onFocus={(e) => e.target.addEventListener('wheel', (evt) => evt.preventDefault(), { passive: false })}
                   />
                 </div>
 
@@ -879,6 +882,8 @@ export default function AuctionPage() {
                       placeholder="Enter final bid amount..."
                       value={soldPrice}
                       onChange={(e) => setSoldPrice(e.target.value)}
+                      onWheel={(e) => e.currentTarget.blur()}
+                      onFocus={(e) => e.target.addEventListener('wheel', (evt) => evt.preventDefault(), { passive: false })}
                     />
                     {selectedPlayer && soldPrice && Number.parseFloat(soldPrice) < selectedPlayer.basePrice && (
                       <p className="text-xs text-destructive">Price must be at least the base price</p>

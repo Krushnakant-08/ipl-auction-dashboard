@@ -86,8 +86,13 @@ export default function PursePage() {
           }
         })
         const data = await response.json()
+        console.log('Fetched settings data:', data)
         if (Array.isArray(data) && data.length > 0) {
+          console.log('Settings set from array:', data[0])
           setSettings(data[0])
+        } else if (data && typeof data === 'object' && !Array.isArray(data)) {
+          console.log('Settings set from object:', data)
+          setSettings(data)
         }
       } catch (error) {
         console.error('Error fetching settings:', error)
@@ -165,6 +170,7 @@ export default function PursePage() {
                 {leftTeams.map((team) => {
                   const colors = getTeamColor(team.franchiseName || team.groupName)
                   const slotsLeft = settings ? settings.maxSquadSize - team.squadPlayerIds.length : 0
+                  console.log(`Team: ${team.franchiseName || team.groupName}, maxSquadSize: ${settings?.maxSquadSize}, squadPlayerIds: ${team.squadPlayerIds.length}, slotsLeft: ${slotsLeft}`)
                   
                   return (
                     <div
@@ -174,13 +180,13 @@ export default function PursePage() {
                       <div className="flex items-center justify-between">
                         {/* Logo */}
                         <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0">
-                          <div className="absolute inset-0 bg-white/20 rounded-full blur-xl"></div>
-                          <div className="relative h-full w-full rounded-full overflow-hidden bg-white/90 p-2">
+                          <div className="absolute inset-0 rounded-full blur-xl"></div>
+                          <div className="relative h-full w-full scale-150 rounded-full overflow-hidden p-2">
                             <Image
                               src={team.logo || "/placeholder.svg"}
                               alt={team.franchiseName || team.groupName}
                               fill
-                              className="object-cover p-1"
+                              className="object-contain p-1"
                               sizes="80px"
                             />
                           </div>
@@ -220,6 +226,7 @@ export default function PursePage() {
                 {rightTeams.map((team) => {
                   const colors = getTeamColor(team.franchiseName || team.groupName)
                   const slotsLeft = settings ? settings.maxSquadSize - team.squadPlayerIds.length : 0
+                  console.log(`Team: ${team.franchiseName || team.groupName}, maxSquadSize: ${settings?.maxSquadSize}, squadPlayerIds: ${team.squadPlayerIds.length}, slotsLeft: ${slotsLeft}`)
                   
                   return (
                     <div
@@ -229,13 +236,13 @@ export default function PursePage() {
                       <div className="flex items-center justify-between">
                         {/* Logo */}
                         <div className="relative h-16 w-16 md:h-20 md:w-20 flex-shrink-0">
-                          <div className="absolute inset-0 bg-white/20 rounded-full blur-xl"></div>
-                          <div className="relative h-full w-full rounded-full overflow-hidden bg-white/90 p-2">
+                          {/* <div className="absolute inset-0 bg-white/20 rounded-full blur-xl"></div> */}
+                          <div className="relative h-full w-full rounded-full scale-150 overflow-hidden  p-2">
                             <Image
                               src={team.logo || "/placeholder.svg"}
                               alt={team.franchiseName || team.groupName}
                               fill
-                              className="object-cover p-1"
+                              className="object-contain p-1"
                               sizes="80px"
                             />
                           </div>
