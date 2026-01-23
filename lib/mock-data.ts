@@ -24,7 +24,7 @@ export const availableFranchises = [
 export const mockTeams: Team[] = [
   {
     id: "t1",
-    groupName: "Group Alpha",
+    groupName: "Anantya Champions",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -39,7 +39,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t2",
-    groupName: "Group Beta",
+    groupName: "ByteCrickters",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -54,7 +54,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t3",
-    groupName: "Group Gamma",
+    groupName: "Knight Riders",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -69,7 +69,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t4",
-    groupName: "Group Delta",
+    groupName: "Royal Strikers",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -84,7 +84,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t5",
-    groupName: "Group Epsilon",
+    groupName: "Team Organizers",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -99,7 +99,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t6",
-    groupName: "Group Zeta",
+    groupName: "NFG",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -114,7 +114,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t7",
-    groupName: "Group Eta",
+    groupName: "912",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -129,7 +129,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t8",
-    groupName: "Group Theta",
+    groupName: "Team Mogo",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -144,7 +144,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t9",
-    groupName: "Group Iota",
+    groupName: "SGIMA",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
@@ -159,7 +159,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t10",
-    groupName: "Group Kappa",
+    groupName: "Ea sala auction namde",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,

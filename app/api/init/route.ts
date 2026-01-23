@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Check for admin password
-    const CLEAR_DB_PASSWORD = process.env.CLEAR_DB_PASSWORD || 'cleardb123'
+    const CLEAR_DB_PASSWORD = process.env.CLEAR_DB_PASSWORD || 'ipl_2026'
     
     const body = await request.json()
     const { password } = body
