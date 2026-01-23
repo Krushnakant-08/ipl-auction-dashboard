@@ -265,7 +265,7 @@ export default function PursePage() {
             </div>
 
             {/* Footer Stats */}
-            <div className="mt-4 text-center">
+            {/* <div className="mt-4 text-center">
               <div className="inline-flex flex-wrap gap-4 bg-white/10 backdrop-blur-lg rounded-xl px-6 py-3 border border-white/20">
                 <div className="text-white text-sm">
                   <span className="font-bold text-orange-500">Total Teams:</span>{" "}
@@ -284,7 +284,7 @@ export default function PursePage() {
                   </span>
                 </div>
               </div>
-            </div>
+            </div> */}
           </>
         )}
       </main>
