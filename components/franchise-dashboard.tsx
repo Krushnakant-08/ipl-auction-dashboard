@@ -23,10 +23,9 @@ export function FranchiseDashboard() {
   const stats = useMemo(() => {
     if (!myTeam) return null
 
-    const totalSpent =
-      myTeam.franchiseBid +
-      myPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0)
-    const remainingBudget = settings.initialBudget - totalSpent
+    // Use the database remainingBudget which already accounts for franchise bid, player purchases, RTM, and RTS costs
+    const remainingBudget = myTeam.remainingBudget
+    const totalSpent = settings.initialBudget - remainingBudget
     const avgPrice = myPlayers.length > 0 ? myPlayers.reduce((sum, p) => sum + (p.purchasePrice || 0), 0) / myPlayers.length : 0
     const overseasCount = myPlayers.filter((p) => p.country !== "India").length
     const budgetUsedPercent = totalSpent > 0 ? (totalSpent / settings.initialBudget) * 100 : 0

@@ -10,7 +10,7 @@ const teamColors: Record<string, { bg: string; text: string }> = {
   'Chennai Super Kings': { bg: 'bg-gradient-to-br from-yellow-400 to-yellow-300', text: 'text-blue-900' },
   'Sunrisers Hyderabad': { bg: 'bg-gradient-to-br from-orange-500 to-orange-400', text: 'text-white' },
   'Delhi Capitals': { bg: 'bg-gradient-to-br from-blue-600 to-blue-500', text: 'text-white' },
-  'Rajasthan Royals': { bg: 'bg-gradient-to-br from-pink-400 to-pink-300', text: 'text-white' },
+  'Rajasthan Royals': { bg: 'bg-gradient-to-br from-pink-400 to-pink-300', text: 'text-blue-900' },
   'Royal Challengers Bangalore': { bg: 'bg-gradient-to-br from-red-600 to-red-500', text: 'text-white' },
   'Punjab Kings': { bg: 'bg-gradient-to-br from-red-500 to-red-400', text: 'text-white' },
   'Gujarat Titans': { bg: 'bg-gradient-to-br from-blue-800 to-blue-700', text: 'text-white' },
