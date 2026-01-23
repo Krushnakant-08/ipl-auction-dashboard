@@ -17,7 +17,7 @@ interface AuthContextType {
 }
 
 // Passwords - Now using environment variables
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "admin123"
+const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "ipl_2026"
 
 // Individual franchise passwords (teamId: password)
 const FRANCHISE_PASSWORDS: Record<string, string> = {
