@@ -265,6 +265,7 @@ curl http://localhost:3000/api/players
 1. **Push to GitHub:**
    ```bash
    git add .
+   
    git commit -m "Initial commit"
    git push origin main
    ```
