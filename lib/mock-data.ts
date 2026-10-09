@@ -2103,7 +2103,7 @@ export const mockPlayers: Player[] = [
     {
         "id": "p185",
         "name": "Riyan Parag",
-        "role": "Batsman",
+        "role": "All-rounder",
         "basePrice": 1.0,
         "country": "India",
         "originalTeam": "Rajasthan Royals",
