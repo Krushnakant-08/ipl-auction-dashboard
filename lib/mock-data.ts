@@ -99,7 +99,7 @@ export const mockTeams: Team[] = [
   },
   {
     id: "t6",
-    groupName: "The Invincibles",
+    groupName: "Blitz Titans",
     franchiseName: null,
     franchiseBid: 0,
     remainingBudget: defaultSettings.initialBudget,
