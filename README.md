@@ -26,7 +26,6 @@
 # Clone the repository
 git clone <your-repo-url>
 cd ipl-auction-dashboard
-
 # Install dependencies
 npm install
 # or
