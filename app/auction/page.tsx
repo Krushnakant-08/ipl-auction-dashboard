@@ -223,7 +223,7 @@ export default function AuctionPage() {
       return
     }
 
-    if (!confirm(`Undo transaction: ${player.name} sold to ${team.franchiseName || team.groupName} for ₹${txn.soldPrice} Cr?\n\nThis will:\n- Return player to Unsold status\n- Refund ₹${txn.soldPrice} Cr to team\n- Remove player from squad\n- Delete transaction record`)) {
+    if (!confirm(`Undo transaction: ${player.name} sold to ${team.franchiseName || team.groupName} for ₹${txn.soldPrice.toFixed(2)} Cr?\n\nThis will:\n- Return player to Unsold status\n- Refund ₹${txn.soldPrice.toFixed(2)} Cr to team\n- Remove player from squad\n- Delete transaction record`)) {
       return
     }
 
@@ -285,7 +285,7 @@ export default function AuctionPage() {
       }
       const savedTeam = await teamResponse.json()
       console.log('✅ Team budget restored and player removed from squad')
-      console.log('💰 New budget:', savedTeam.remainingBudget.toFixed(1), 'Cr')
+      console.log('💰 New budget:', savedTeam.remainingBudget.toFixed(2), 'Cr')
       console.log('👥 New squad size:', savedTeam.squadPlayerIds?.length || 0)
 
       // Step 4: Broadcast sync to all clients
@@ -296,7 +296,7 @@ export default function AuctionPage() {
       
       toast({
         title: "Transaction Reversed",
-        description: `${player.name} returned to unsold players. ₹${txn.soldPrice} Cr refunded to ${team.franchiseName || team.groupName}.`
+        description: `${player.name} returned to unsold players. ₹${txn.soldPrice.toFixed(2)} Cr refunded to ${team.franchiseName || team.groupName}.`
       })
     } catch (error) {
       console.error('❌ Error reversing transaction:', error)
@@ -457,6 +457,7 @@ export default function AuctionPage() {
                       id="bid"
                       type="number"
                       min="0"
+                      step="0.01"
                       max={settings.initialBudget}
                       placeholder="Enter franchise bid..."
                       value={franchiseBid}
@@ -466,7 +467,7 @@ export default function AuctionPage() {
                     />
                     <p className="text-xs text-muted-foreground">
                       Budget after purchase: ₹
-                      {(settings.initialBudget - Number.parseFloat(franchiseBid || "0")).toFixed(1)} Cr
+                      {(settings.initialBudget - Number.parseFloat(franchiseBid || "0")).toFixed(2)} Cr
                     </p>
                   </div>
 
@@ -501,9 +502,9 @@ export default function AuctionPage() {
                               <div className="text-sm text-muted-foreground">{team.groupName}</div>
                             </div>
                             <div className="text-right">
-                              <div className="font-bold text-primary">₹{team.franchiseBid?.toFixed(1)} Cr</div>
+                              <div className="font-bold text-primary">₹{team.franchiseBid?.toFixed(2)} Cr</div>
                               <div className="text-xs text-muted-foreground">
-                                ₹{team.remainingBudget?.toFixed(1)} Cr left
+                                ₹{team.remainingBudget?.toFixed(2)} Cr left
                               </div>
                             </div>
                           </div>
@@ -598,7 +599,7 @@ export default function AuctionPage() {
                         .filter((t) => t.teamAuctionComplete && (t.rtmCount || 0) < 2)
                         .map((team) => (
                           <SelectItem key={team.id} value={team.id}>
-                            {team.franchiseName} (₹{team.remainingBudget.toFixed(1)} Cr)
+                            {team.franchiseName} (₹{team.remainingBudget.toFixed(2)} Cr)
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -610,6 +611,7 @@ export default function AuctionPage() {
                   <Input
                     type="number"
                     min="0"
+                    step="0.01"
                     placeholder="Enter bid amount..."
                     value={rtmPrice}
                     onChange={(e) => setRtmPrice(e.target.value)}
@@ -668,7 +670,7 @@ export default function AuctionPage() {
                         .filter((t) => t.teamAuctionComplete && (t.rtsCount || 0) < 2)
                         .map((team) => (
                           <SelectItem key={team.id} value={team.id}>
-                            {team.franchiseName} (₹{team.remainingBudget.toFixed(1)} Cr)
+                            {team.franchiseName} (₹{team.remainingBudget.toFixed(2)} Cr)
                           </SelectItem>
                         ))}
                     </SelectContent>
@@ -680,6 +682,7 @@ export default function AuctionPage() {
                   <Input
                     type="number"
                     min="0"
+                    step="0.01"
                     placeholder="Enter bid amount..."
                     value={rtsPrice}
                     onChange={(e) => setRtsPrice(e.target.value)}
@@ -788,7 +791,7 @@ export default function AuctionPage() {
                                   <Badge variant="secondary" className="text-xs">
                                     {player.country}
                                   </Badge>
-                                  <span className="text-muted-foreground">₹{player.basePrice} Cr</span>
+                                  <span className="text-muted-foreground">₹{player.basePrice.toFixed(2)} Cr</span>
                                 </div>
                               </div>
                             </SelectItem>
@@ -817,7 +820,7 @@ export default function AuctionPage() {
                           </div>
                           <div>
                             <div className="text-xs text-muted-foreground mb-1">Base Price</div>
-                            <div className="font-bold text-xl text-primary">₹{selectedPlayer.basePrice} Cr</div>
+                            <div className="font-bold text-xl text-primary">₹{selectedPlayer.basePrice.toFixed(2)} Cr</div>
                           </div>
                         </div>
                       </CardContent>
@@ -842,7 +845,7 @@ export default function AuctionPage() {
                               <div className="flex items-center justify-between gap-4">
                                 <span className="font-medium">{team.franchiseName || team.groupName}</span>
                                 <span className="text-xs text-muted-foreground">
-                                  ₹{remaining.toFixed(1)} Cr remaining
+                                  ₹{remaining.toFixed(2)} Cr remaining
                                 </span>
                               </div>
                             </SelectItem>
@@ -860,7 +863,7 @@ export default function AuctionPage() {
                         <span className="font-semibold">{selectedTeam.franchiseName || selectedTeam.groupName}</span>{" "}
                         has{" "}
                         <span className="font-bold text-primary">
-                          ₹{(selectedTeam.remainingBudget || 0).toFixed(1)} Cr
+                          ₹{(selectedTeam.remainingBudget || 0).toFixed(2)} Cr
                         </span>{" "}
                         remaining with {selectedTeam.squadPlayerIds?.length || 0} players.
                       </AlertDescription>
@@ -877,6 +880,7 @@ export default function AuctionPage() {
                       id="price"
                       type="number"
                       min={selectedPlayer?.basePrice || 0}
+                      step="0.01"
                       placeholder="Enter final bid amount..."
                       value={soldPrice}
                       onChange={(e) => setSoldPrice(e.target.value)}
@@ -956,7 +960,7 @@ export default function AuctionPage() {
                               </div>
                             </div>
                             <div className="text-left sm:text-right shrink-0">
-                              <div className="font-bold text-primary">₹{txn.soldPrice} Cr</div>
+                              <div className="font-bold text-primary">₹{txn.soldPrice.toFixed(2)} Cr</div>
                               <div className="text-xs text-muted-foreground">
                                 {new Date(txn.timestamp).toLocaleTimeString()}
                               </div>
@@ -1008,7 +1012,7 @@ export default function AuctionPage() {
                   <div className="pt-4 border-t">
                     <div className="text-sm text-muted-foreground mb-1">Total Spent</div>
                     <div className="text-2xl font-bold text-primary">
-                      ₹{teams.reduce((sum, t) => sum + t.franchiseBid + (settings.initialBudget - t.remainingBudget - t.franchiseBid), 0).toFixed(1)}{" "}
+                      ₹{teams.reduce((sum, t) => sum + t.franchiseBid + (settings.initialBudget - t.remainingBudget - t.franchiseBid), 0).toFixed(2)}{" "}
                       Cr
                     </div>
                   </div>
@@ -1016,7 +1020,7 @@ export default function AuctionPage() {
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Available Budget</div>
                     <div className="text-2xl font-bold text-accent">
-                      ₹{teams.reduce((sum, t) => sum + (t.remainingBudget || 0), 0).toFixed(1)} Cr
+                      ₹{teams.reduce((sum, t) => sum + (t.remainingBudget || 0), 0).toFixed(2)} Cr
                     </div>
                   </div>
                 </CardContent>
@@ -1045,7 +1049,7 @@ export default function AuctionPage() {
                                   {player.role}
                                 </Badge>
                               </div>
-                              <div className="font-bold text-primary ml-2">₹{txn.soldPrice} Cr</div>
+                              <div className="font-bold text-primary ml-2">₹{txn.soldPrice.toFixed(2)} Cr</div>
                             </div>
                           )
                         })}

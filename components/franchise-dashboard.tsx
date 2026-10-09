@@ -83,7 +83,7 @@ export function FranchiseDashboard() {
               <p className="text-muted-foreground mb-3">{myTeam.groupName}</p>
               <div className="flex items-center gap-4">
                 <Badge variant="outline" className="text-sm">
-                  Franchise Bid: ₹{stats.franchiseBid} Cr
+                  Franchise Bid: ₹{stats.franchiseBid.toFixed(2)} Cr
                 </Badge>
                 <Badge variant={myTeam.rtmUsed ? "secondary" : "outline"} className="text-sm">
                   RTM: {myTeam.rtmUsed ? "Used" : "Available"}
@@ -107,7 +107,7 @@ export function FranchiseDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-primary">₹{stats.remainingBudget.toFixed(1)} Cr</div>
+            <div className="text-3xl font-bold text-primary">₹{stats.remainingBudget.toFixed(2)} Cr</div>
             <p className="text-xs text-muted-foreground mt-1">
               {stats.budgetUsedPercent.toFixed(1)}% budget used
             </p>
@@ -137,7 +137,7 @@ export function FranchiseDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-accent">₹{stats.totalSpent.toFixed(1)} Cr</div>
+            <div className="text-3xl font-bold text-accent">₹{stats.totalSpent.toFixed(2)} Cr</div>
             <p className="text-xs text-muted-foreground mt-1">
               Avg: ₹{stats.avgPrice.toFixed(2)} Cr per player
             </p>
@@ -210,7 +210,7 @@ export function FranchiseDashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-primary">₹{player.purchasePrice} Cr</div>
+                      <div className="font-bold text-primary">₹{player.purchasePrice?.toFixed(2)} Cr</div>
                       <Badge variant="outline" className="text-xs">
                         {player.country}
                       </Badge>
@@ -256,7 +256,7 @@ export function FranchiseDashboard() {
                         <Badge variant="outline">{player.role}</Badge>
                       </TableCell>
                       <TableCell>{player.country}</TableCell>
-                      <TableCell className="text-right font-medium">₹{player.purchasePrice} Cr</TableCell>
+                      <TableCell className="text-right font-medium">₹{player.purchasePrice?.toFixed(2)} Cr</TableCell>
                       {/* <TableCell className="text-center">
                         <Badge variant="secondary">{player.ratings.overall}</Badge>
                       </TableCell> */}

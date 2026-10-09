@@ -40,9 +40,9 @@ export default function DashboardPage() {
       const spent = settings.initialBudget - team.remainingBudget
       return {
         name: team.franchiseName ? team.franchiseName.split(" ")[0] : team.groupName.split(" ")[0], // Shortened name for chart
-        spent: Number(spent.toFixed(1)),
-        remaining: Number(team.remainingBudget.toFixed(1)),
-        total: Number(settings.initialBudget.toFixed(1)),
+        spent: Number(spent.toFixed(2)),
+        remaining: Number(team.remainingBudget.toFixed(2)),
+        total: Number(settings.initialBudget.toFixed(2)),
       }
     })
   }, [teams, settings.initialBudget])
@@ -111,7 +111,7 @@ export default function DashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">₹{stats.totalSpent.toFixed(1)} Cr</div>
+              <div className="text-3xl font-bold text-primary">₹{stats.totalSpent.toFixed(2)} Cr</div>
               <p className="text-xs text-muted-foreground mt-1">
                 Across all {teams.length} teams
               </p>
@@ -276,7 +276,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-primary">₹{player.purchasePrice} Cr</div>
+                          <div className="font-bold text-primary">₹{player.purchasePrice?.toFixed(2)} Cr</div>
                           <div className="text-xs text-muted-foreground">{player.role}</div>
                         </div>
                       </div>

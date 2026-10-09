@@ -148,7 +148,7 @@ export default function SettingsPage() {
                   type="number"
                   min="50"
                   max="500"
-                  step="10"
+                  step="0.01"
                   value={localSettings.initialBudget}
                   onChange={(e) => {setLocalSettings({ ...localSettings, initialBudget: Number(e.target.value) }); defaultSettings.initialBudget = Number(e.target.value)}}
                 />

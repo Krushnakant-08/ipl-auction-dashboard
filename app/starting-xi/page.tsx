@@ -128,7 +128,7 @@ export default function StartingXIPage() {
                                   </Badge>
                                 </div>
                                 <div className="text-xs text-muted-foreground mt-2">
-                                  ₹{player.purchasePrice} Cr
+                                  ₹{player.purchasePrice?.toFixed(2)} Cr
                                 </div>
                               </div>
                             </div>

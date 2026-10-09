@@ -134,7 +134,7 @@ export function RTMSquadDialog({ teamId, open, onClose }: RTMSquadDialogProps) {
                       </div>
                       <div>
                         <div className="text-xs text-muted-foreground mb-1">Purchase Price</div>
-                        <div className="text-2xl font-bold text-primary">₹{selectedPlayer.purchasePrice} Cr</div>
+                        <div className="text-2xl font-bold text-primary">₹{selectedPlayer.purchasePrice?.toFixed(2)} Cr</div>
                       </div>
                     </div>
                   </div>
@@ -153,7 +153,7 @@ export function RTMSquadDialog({ teamId, open, onClose }: RTMSquadDialogProps) {
                   <div className="p-3 rounded-lg border bg-card">
                     <div className="text-xs text-muted-foreground mb-1">Budget After RTM</div>
                     <div className="text-lg font-bold">
-                      ₹{(team.remainingBudget - (selectedPlayer.purchasePrice || 0)).toFixed(1)} Cr
+                      ₹{(team.remainingBudget - (selectedPlayer.purchasePrice || 0)).toFixed(2)} Cr
                     </div>
                   </div>
                 </div>

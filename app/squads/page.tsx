@@ -151,7 +151,7 @@ export default function SquadsPage() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold text-primary">₹{totalSpent.toFixed(1)} Cr</div>
+                      <div className="text-2xl font-bold text-primary">₹{totalSpent.toFixed(2)} Cr</div>
                     </CardContent>
                   </Card>
 
@@ -175,7 +175,7 @@ export default function SquadsPage() {
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold text-accent">
-                        ₹{team.remainingBudget.toFixed(1)} Cr
+                        ₹{team.remainingBudget.toFixed(2)} Cr
                       </div>
                     </CardContent>
                   </Card>
@@ -223,12 +223,12 @@ export default function SquadsPage() {
                                     </Badge>
                                   </TableCell>
                                   <TableCell className="text-right text-muted-foreground">
-                                    ₹{player.basePrice} Cr
+                                    ₹{player.basePrice.toFixed(2)} Cr
                                   </TableCell>
-                                  <TableCell className="text-right font-medium">₹{player.purchasePrice} Cr</TableCell>
+                                  <TableCell className="text-right font-medium">₹{player.purchasePrice?.toFixed(2)} Cr</TableCell>
                                   <TableCell className="text-right">
                                     <span className={isOverpaid ? "text-destructive" : "text-accent"}>
-                                      {isOverpaid ? "+" : ""}₹{value.toFixed(1)} Cr
+                                      {isOverpaid ? "+" : ""}₹{value.toFixed(2)} Cr
                                     </span>
                                   </TableCell>
                                 </TableRow>

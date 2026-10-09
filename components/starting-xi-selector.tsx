@@ -148,7 +148,7 @@ export function StartingXISelector({ teamId, open, onClose }: StartingXISelector
                       </div>
                     </div>
                     <div className="text-sm font-medium text-muted-foreground">
-                      ₹{player.purchasePrice} Cr
+                      ₹{player.purchasePrice?.toFixed(2)} Cr
                     </div>
                   </div>
                 )

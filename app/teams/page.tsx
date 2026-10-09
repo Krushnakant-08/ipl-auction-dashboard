@@ -84,11 +84,11 @@ export default function TeamsPage() {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="text-right font-medium">₹{totalBudget} Cr</TableCell>
-                        <TableCell className="text-right">₹{spent.toFixed(1)} Cr</TableCell>
+                        <TableCell className="text-right font-medium">₹{totalBudget.toFixed(2)} Cr</TableCell>
+                        <TableCell className="text-right">₹{spent.toFixed(2)} Cr</TableCell>
                         <TableCell className="text-right">
                           <span className={isLowBudget ? "text-destructive font-semibold" : "font-medium"}>
-                            ₹{remaining.toFixed(1)} Cr
+                            ₹{remaining.toFixed(2)} Cr
                           </span>
                         </TableCell>
                         <TableCell className="text-center">
@@ -136,7 +136,7 @@ export default function TeamsPage() {
               <CardTitle className="text-sm font-medium text-muted-foreground">Total Budget</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">₹{teams.length * settings.initialBudget} Cr</div>
+              <div className="text-2xl font-bold">₹{(teams.length * settings.initialBudget).toFixed(2)} Cr</div>
             </CardContent>
           </Card>
           <Card>
@@ -155,7 +155,7 @@ export default function TeamsPage() {
                     }, 0)
                     return sum + franchiseBid + playerSpend
                   }, 0)
-                  .toFixed(1)}{" "}
+                  .toFixed(2)}{" "}
                 Cr
               </div>
             </CardContent>
@@ -166,7 +166,7 @@ export default function TeamsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-accent">
-                ₹{teams.reduce((sum, t) => sum + t.remainingBudget, 0).toFixed(1)} Cr
+                ₹{teams.reduce((sum, t) => sum + t.remainingBudget, 0).toFixed(2)} Cr
               </div>
             </CardContent>
           </Card>

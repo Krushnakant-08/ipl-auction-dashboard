@@ -137,7 +137,7 @@ export default function UnsoldPlayersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">
-                  ₹{unsoldPlayers.reduce((sum, p) => sum + p.basePrice, 0).toFixed(1)} Cr
+                  ₹{unsoldPlayers.reduce((sum, p) => sum + p.basePrice, 0).toFixed(2)} Cr
                 </div>
               </CardContent>
             </Card>
@@ -194,7 +194,7 @@ export default function UnsoldPlayersPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="font-semibold">
-                            ₹{player.basePrice} Cr
+                            ₹{player.basePrice.toFixed(2)} Cr
                           </TableCell>
                           <TableCell>
                             {player.originalTeam ? (

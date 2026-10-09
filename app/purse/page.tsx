@@ -195,7 +195,7 @@ export default function PursePage() {
                         {/* Purse Info */}
                         <div className={`flex-1 text-right ${colors.text}`}>
                           <div className="text-3xl md:text-4xl font-black leading-none mb-1">
-                            {team.remainingBudget.toFixed(1)} Cr
+                            {team.remainingBudget.toFixed(2)} Cr
                           </div>
                           <div className={`text-xs md:text-sm font-bold opacity-90`}>
                             Slots left: {slotsLeft}
@@ -251,7 +251,7 @@ export default function PursePage() {
                         {/* Purse Info */}
                         <div className={`flex-1 text-right ${colors.text}`}>
                           <div className="text-3xl md:text-4xl font-black leading-none mb-1">
-                            {team.remainingBudget.toFixed(1)} Cr
+                            {team.remainingBudget.toFixed(2)} Cr
                           </div>
                           <div className={`text-xs md:text-sm font-bold opacity-90`}>
                             Slots left: {slotsLeft}
@@ -274,13 +274,13 @@ export default function PursePage() {
                 <div className="text-white text-sm">
                   <span className="font-bold text-orange-500">Average Purse:</span>{" "}
                   <span className="text-lg font-bold">
-                    ₹{teams.length > 0 ? (teams.reduce((sum, t) => sum + t.remainingBudget, 0) / teams.length).toFixed(1) : '0'} Cr
+                    ₹{teams.length > 0 ? (teams.reduce((sum, t) => sum + t.remainingBudget, 0) / teams.length).toFixed(2) : '0.00'} Cr
                   </span>
                 </div>
                 <div className="text-white text-sm">
                   <span className="font-bold text-orange-500">Highest:</span>{" "}
                   <span className="text-lg font-bold">
-                    ₹{sortedTeams.length > 0 ? sortedTeams[0].remainingBudget.toFixed(1) : '0'} Cr
+                    ₹{sortedTeams.length > 0 ? sortedTeams[0].remainingBudget.toFixed(2) : '0.00'} Cr
                   </span>
                 </div>
               </div>

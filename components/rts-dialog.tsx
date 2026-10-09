@@ -99,7 +99,7 @@ export function RTSDialog({ teamId, open, onClose }: RTSDialogProps) {
                               <Badge variant="outline" className="text-xs">
                                 {player.role}
                               </Badge>
-                              <span className="text-xs text-muted-foreground">₹{player.purchasePrice} Cr</span>
+                              <span className="text-xs text-muted-foreground">₹{player.purchasePrice?.toFixed(2)} Cr</span>
                             </div>
                           </div>
                         </SelectItem>
@@ -121,14 +121,14 @@ export function RTSDialog({ teamId, open, onClose }: RTSDialogProps) {
                     </div>
                     <div>
                       <div className="text-xs text-muted-foreground mb-1">Refund Amount</div>
-                      <div className="text-2xl font-bold text-accent">₹{selectedPlayer.purchasePrice} Cr</div>
+                      <div className="text-2xl font-bold text-accent">₹{selectedPlayer.purchasePrice?.toFixed(2)} Cr</div>
                     </div>
                   </div>
 
                   <div className="mt-4 p-3 rounded-lg border bg-card">
                     <div className="text-xs text-muted-foreground mb-1">Budget After RTS</div>
                     <div className="text-lg font-bold">
-                      ₹{(team.remainingBudget + (selectedPlayer.purchasePrice || 0)).toFixed(1)} Cr
+                      ₹{(team.remainingBudget + (selectedPlayer.purchasePrice || 0)).toFixed(2)} Cr
                     </div>
                   </div>
                 </div>

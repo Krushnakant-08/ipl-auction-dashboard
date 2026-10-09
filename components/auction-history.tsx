@@ -92,7 +92,7 @@ export function AuctionHistory() {
                           <span className="text-sm font-medium">{team.franchiseName || team.groupName}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right font-bold text-primary">₹{txn.soldPrice} Cr</TableCell>
+                      <TableCell className="text-right font-bold text-primary">₹{txn.soldPrice.toFixed(2)} Cr</TableCell>
                     </TableRow>
                   )
                 })}

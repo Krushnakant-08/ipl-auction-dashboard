@@ -189,7 +189,7 @@ export default function PlayersPage() {
                               {player.country}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">₹{player.basePrice} Cr</TableCell>
+                          <TableCell className="text-right">₹{player.basePrice.toFixed(2)} Cr</TableCell>
                           <TableCell>
                             <Badge variant={getStatusBadgeVariant(player.status)}>{player.status}</Badge>
                           </TableCell>
@@ -203,7 +203,7 @@ export default function PlayersPage() {
                           <TableCell className="text-right font-medium">
                             {player.purchasePrice
                               ? canSeeSoldPrice
-                                ? `₹${player.purchasePrice} Cr`
+                                ? `₹${player.purchasePrice.toFixed(2)} Cr`
                                 : "●●●●"
                               : "-"}
                           </TableCell>
