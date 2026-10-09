@@ -11,6 +11,7 @@ if (!MONGODB_URI) {
 interface MongooseCache {
   conn: typeof mongoose | null
   promise: Promise<typeof mongoose> | null
+  listenersAttached?: boolean
 }
 
 declare global {
@@ -30,8 +31,8 @@ async function connectDB() {
     return cached.conn
   }
 
-  // If connection is not ready, reset promise to reconnect
-  if (cached.conn && cached.conn.connection.readyState !== 1) {
+  // If connection is dead, reset promise to reconnect (keep in-flight connects, readyState 2)
+  if (cached.conn && cached.conn.connection.readyState !== 1 && cached.conn.connection.readyState !== 2) {
     cached.promise = null
     cached.conn = null
   }
@@ -39,9 +40,10 @@ async function connectDB() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
-      // Optimize connection pooling for M0 cluster (max 500 connections)
-      maxPoolSize: 10, // Limit concurrent connections per instance
-      minPoolSize: 2,  // Keep minimum connections alive
+      // Optimize connection pooling for M0 cluster (max 500 connections).
+      // On Vercel every warm serverless instance holds its own pool, so keep it small.
+      maxPoolSize: 5, // Limit concurrent connections per instance
+      minPoolSize: 0, // Don't hold idle connections (minPoolSize applies per replica set member)
       serverSelectionTimeoutMS: 5000, // Fail fast if server unavailable
       socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
       family: 4, // Use IPv4, skip trying IPv6
@@ -52,19 +54,22 @@ async function connectDB() {
 
     cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
       console.log('✅ MongoDB connected successfully')
-      
-      // Add connection event handlers
-      mongoose.connection.on('error', (err) => {
-        console.error('❌ MongoDB connection error:', err)
-        cached.conn = null
-        cached.promise = null
-      })
 
-      mongoose.connection.on('disconnected', () => {
-        console.warn('⚠️ MongoDB disconnected')
-        cached.conn = null
-        cached.promise = null
-      })
+      // Add connection event handlers once (reconnects reuse the same connection object)
+      if (!cached.listenersAttached) {
+        cached.listenersAttached = true
+        mongoose.connection.on('error', (err) => {
+          console.error('❌ MongoDB connection error:', err)
+          cached.conn = null
+          cached.promise = null
+        })
+
+        mongoose.connection.on('disconnected', () => {
+          console.warn('⚠️ MongoDB disconnected')
+          cached.conn = null
+          cached.promise = null
+        })
+      }
 
       return mongoose
     })
